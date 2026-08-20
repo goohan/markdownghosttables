@@ -154,6 +154,36 @@ function updateTabContext() {
   vscode.commands.executeCommand('setContext', 'markdownGhostTables.tabOurs', ours);
 }
 
+// When both extensions bind Tab with a matching clause, VS Code runs the one
+// loaded last (Markdown Table). User-level keybindings beat every extension,
+// and carrying our tabOurs clause they only fire when the Tab is ours — so MT
+// keeps its Tab untouched in expand mode. Offered once when the conflict exists.
+const TAB_WHEN = "markdownGhostTables.tabOurs && markdownGhostTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections";
+const TAB_SNIPPET = `{
+    "key": "tab",
+    "command": "markdownGhostTables.nextCell",
+    "when": "${TAB_WHEN}"
+},
+{
+    "key": "shift+tab",
+    "command": "markdownGhostTables.prevCell",
+    "when": "${TAB_WHEN}"
+}`;
+
+async function maybeOfferTabPriority(context) {
+  if (context.globalState.get('tabPriorityOffered')) return;
+  if (!config().get('tabNavigation') || !vscode.extensions.getExtension(MT_ID)) return;
+  await context.globalState.update('tabPriorityOffered', true);
+  const pick = await vscode.window.showInformationMessage(
+    'Markdown Table also binds Tab and wins between extensions. To let Markdown Ghost Tables take the Tab in compact mode (Markdown Table keeps it in expand mode), add two rules to your user keybindings — see the README, or:',
+    'Copy snippet & open keybindings'
+  );
+  if (pick) {
+    await vscode.env.clipboard.writeText(TAB_SNIPPET);
+    await vscode.commands.executeCommand('workbench.action.openGlobalKeybindingsFile');
+  }
+}
+
 function updateStatusBar() {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== 'markdown') {
@@ -217,6 +247,7 @@ export function activate(context) {
 
   updateTabContext();
   updateStatusBar();
+  maybeOfferTabPriority(context);
 
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownGhostTables.compact', () => formatDocument('compact')),
@@ -240,6 +271,7 @@ export function activate(context) {
       refreshVisibleEditors();
       updateTabContext();
       updateStatusBar();
+      maybeOfferTabPriority(context);
     }),
     vscode.extensions.onDidChange(updateTabContext),
 

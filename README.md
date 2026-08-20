@@ -11,7 +11,20 @@ Alignment padding in markdown tables is presentation, not content: it bloats fil
 - **Compact / Expand commands** — normalize all tables in the document either way, preserving alignment colons (`:---`, `---:`, `:---:`), escaped pipes (`\|`) and tables inside code fences (untouched).
 - **Format on save** — declare the mode (`compact` or `expand`) per user or per repo (`.vscode/settings.json`), enable format-on-save, and every save normalizes the tables.
 - **Status bar menu** — a `$(table)`-style status bar item (visible on markdown files, showing the current mode) opens a checklist to toggle every feature in place: ghost alignment, column colors, expand mode, Tab navigation and format-on-save. Handy for isolating what you see while debugging a table.
-- **Tab navigation (optional, off by default)** — Tab/Shift+Tab inside a table formats it to the mode and jumps between cells, adding a new row at the end. Coexistence with the [Markdown Table](https://marketplace.visualstudio.com/items?itemName=TakumiI.markdowntable) extension: in `expand` mode its Tab wins (it is the full table *editor*, aligning with real spaces); in `compact` mode this extension takes the Tab — this one governs how tables rest and how they look.
+- **Tab navigation (optional, off by default)** — Tab/Shift+Tab inside a table formats it to the mode and jumps between cells, adding a new row at the end. Coexistence with the [Markdown Table](https://marketplace.visualstudio.com/items?itemName=TakumiI.markdowntable) extension: in `expand` mode its Tab wins (it is the full table *editor*, aligning with real spaces); in `compact` mode this extension takes the Tab — this one governs how tables rest and how they look. **If you have both installed**, one extra step is needed (VS Code runs the last-loaded extension when two bind the same key, and that is Markdown Table): add the two rules below to your user `keybindings.json` — user rules beat extensions, and these carry the `tabOurs` clause, so they only fire when this extension owns the Tab and leave Markdown Table's Tab untouched in `expand` mode. The extension offers to copy them when it detects the conflict.
+
+  ```json
+  {
+      "key": "tab",
+      "command": "markdownGhostTables.nextCell",
+      "when": "markdownGhostTables.tabOurs && markdownGhostTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
+  },
+  {
+      "key": "shift+tab",
+      "command": "markdownGhostTables.prevCell",
+      "when": "markdownGhostTables.tabOurs && markdownGhostTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
+  }
+  ```
 
 ## Settings
 

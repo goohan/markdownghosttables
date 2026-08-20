@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.2
+
+- Tab vs Markdown Table, solved for real: when both extensions bind Tab, VS Code runs the last-loaded one (Markdown Table), so the compact-mode takeover never fired. The fix is two user-level keybinding rules (user rules beat extensions) carrying the `tabOurs` clause — they only fire when this extension owns the Tab. The extension now detects the conflict once and offers to copy the snippet; it is also documented in the README.
+
 ## 0.2.1
 
 - Namespace rename, clean break while unpublished: settings, commands and context keys move from `markdownTables.*` to `markdownGhostTables.*` (the extension's own identity — the old prefix was generic enough to collide with other table extensions). Command palette titles now read "Markdown Ghost Tables: …" too. Update any `.vscode/settings.json` accordingly; no migration shim is provided.
