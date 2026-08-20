@@ -37,3 +37,11 @@ npm run package   # produces the .vsix
 ```
 
 The formatting algorithm lives in [src/core.mjs](src/core.mjs), dependency-free and VS Code-free; the extension ([src/extension.mjs](src/extension.mjs)) only maps its table model to editor decorations.
+
+## License
+
+[MIT](LICENSE.md)
+
+## Credits
+
+The icon for this extension is based on the Flaticon library: [Table icons created by Magnific - Flaticon](https://www.flaticon.com/free-icons/table)
