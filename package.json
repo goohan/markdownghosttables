@@ -1,0 +1,113 @@
+{
+  "name": "markdownghosttables",
+  "displayName": "Markdown Ghost Tables",
+  "description": "Compact markdown tables that still look aligned: virtual (ghost) column alignment, per-column colors, compact/expand commands, format-on-save and optional Tab cell navigation.",
+  "version": "0.1.0",
+  "publisher": "goohan",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Formatters",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "table",
+    "align",
+    "format",
+    "rainbow"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/goohan/markdownghosttables.git"
+  },
+  "bugs": {
+    "url": "https://github.com/goohan/markdownghosttables/issues"
+  },
+  "homepage": "https://github.com/goohan/markdownghosttables#readme",
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:markdown"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "markdownTables.compact",
+        "title": "Markdown Tables: Compact tables (remove alignment padding)"
+      },
+      {
+        "command": "markdownTables.expand",
+        "title": "Markdown Tables: Expand tables (align with real spaces)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "markdownTables.nextCell",
+        "key": "tab",
+        "when": "config.markdownTables.tabNavigation && !markdownTables.mtInstalled && markdownTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
+      },
+      {
+        "command": "markdownTables.prevCell",
+        "key": "shift+tab",
+        "when": "config.markdownTables.tabNavigation && !markdownTables.mtInstalled && markdownTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
+      }
+    ],
+    "configuration": {
+      "title": "Markdown Ghost Tables",
+      "properties": {
+        "markdownTables.ghostAlign": {
+          "type": "boolean",
+          "default": true,
+          "description": "Render virtual (ghost) padding so compact tables look column-aligned on screen without writing spaces into the file."
+        },
+        "markdownTables.ghostTint": {
+          "type": "string",
+          "default": "rgba(128,128,128,0.10)",
+          "description": "Background tint of the ghost padding, so you can always tell which spaces are real and which are virtual."
+        },
+        "markdownTables.columnColors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Color each table column with a subtle background (rainbow-style) for readability."
+        },
+        "markdownTables.formatOnSave": {
+          "type": "string",
+          "enum": [
+            "off",
+            "compact",
+            "expand"
+          ],
+          "default": "off",
+          "description": "Normalize all tables to this resting state when saving a markdown file. Teams can commit this per repo in .vscode/settings.json."
+        },
+        "markdownTables.tabNavigation": {
+          "type": "boolean",
+          "default": false,
+          "description": "Tab/Shift+Tab inside a table formats it and jumps between cells. Off by default; automatically yields if the Markdown Table extension (takumii.markdowntable) is installed."
+        },
+        "markdownTables.tabFormatMode": {
+          "type": "string",
+          "enum": [
+            "expand",
+            "compact"
+          ],
+          "default": "expand",
+          "description": "How the table is formatted while navigating with Tab (real alignment is comfortable while editing; format-on-save restores the resting state)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "esbuild src/extension.mjs --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.25.0"
+  }
+}
