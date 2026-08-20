@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.1
+
+- Namespace rename, clean break while unpublished: settings, commands and context keys move from `markdownTables.*` to `markdownGhostTables.*` (the extension's own identity — the old prefix was generic enough to collide with other table extensions). Command palette titles now read "Markdown Ghost Tables: …" too. Update any `.vscode/settings.json` accordingly; no migration shim is provided.
+
 ## 0.2.0
 
 - Status bar menu: a status bar item (markdown files only, shows the current mode) opens a checklist to toggle ghost alignment, column colors, expand mode, Tab navigation and format-on-save in place.

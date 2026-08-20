@@ -17,12 +17,12 @@ Alignment padding in markdown tables is presentation, not content: it bloats fil
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `markdownTables.mode` | `compact` | Table mode (`compact` / `expand`): drives format-on-save and Tab formatting |
-| `markdownTables.ghostAlign` | `true` | Virtual column alignment |
-| `markdownTables.ghostTint` | `rgba(128,128,128,0.10)` | Background tint of ghost padding |
-| `markdownTables.columnColors` | `true` | Rainbow column backgrounds |
-| `markdownTables.formatOnSave` | `false` | Normalize all tables to the mode on save |
-| `markdownTables.tabNavigation` | `false` | Tab formats to the mode + jumps between cells |
+| `markdownGhostTables.mode` | `compact` | Table mode (`compact` / `expand`): drives format-on-save and Tab formatting |
+| `markdownGhostTables.ghostAlign` | `true` | Virtual column alignment |
+| `markdownGhostTables.ghostTint` | `rgba(128,128,128,0.10)` | Background tint of ghost padding |
+| `markdownGhostTables.columnColors` | `true` | Rainbow column backgrounds |
+| `markdownGhostTables.formatOnSave` | `false` | Normalize all tables to the mode on save |
+| `markdownGhostTables.tabNavigation` | `false` | Tab formats to the mode + jumps between cells |
 
 ## Known limitations
 

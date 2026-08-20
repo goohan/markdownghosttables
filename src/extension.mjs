@@ -23,7 +23,7 @@ let columnTypes = [];
 let debounceTimer;
 let statusItem;
 
-const config = () => vscode.workspace.getConfiguration('markdownTables');
+const config = () => vscode.workspace.getConfiguration('markdownGhostTables');
 const currentMode = () => (config().get('mode') === 'expand' ? 'expand' : 'compact');
 const fullRange = (doc) => new vscode.Range(0, 0, doc.lineCount - 1, doc.lineAt(doc.lineCount - 1).text.length);
 const ghostColor = () => new vscode.ThemeColor('editorGhostText.foreground');
@@ -151,7 +151,7 @@ async function moveCell(delta) {
 function updateTabContext() {
   const mt = !!vscode.extensions.getExtension(MT_ID);
   const ours = !!config().get('tabNavigation') && (!mt || currentMode() === 'compact');
-  vscode.commands.executeCommand('setContext', 'markdownTables.tabOurs', ours);
+  vscode.commands.executeCommand('setContext', 'markdownGhostTables.tabOurs', ours);
 }
 
 function updateStatusBar() {
@@ -212,18 +212,18 @@ export function activate(context) {
   context.subscriptions.push(ghostType, ...columnTypes);
 
   statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  statusItem.command = 'markdownTables.menu';
+  statusItem.command = 'markdownGhostTables.menu';
   context.subscriptions.push(statusItem);
 
   updateTabContext();
   updateStatusBar();
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('markdownTables.compact', () => formatDocument('compact')),
-    vscode.commands.registerCommand('markdownTables.expand', () => formatDocument('expand')),
-    vscode.commands.registerCommand('markdownTables.nextCell', () => moveCell(1)),
-    vscode.commands.registerCommand('markdownTables.prevCell', () => moveCell(-1)),
-    vscode.commands.registerCommand('markdownTables.menu', showMenu),
+    vscode.commands.registerCommand('markdownGhostTables.compact', () => formatDocument('compact')),
+    vscode.commands.registerCommand('markdownGhostTables.expand', () => formatDocument('expand')),
+    vscode.commands.registerCommand('markdownGhostTables.nextCell', () => moveCell(1)),
+    vscode.commands.registerCommand('markdownGhostTables.prevCell', () => moveCell(-1)),
+    vscode.commands.registerCommand('markdownGhostTables.menu', showMenu),
 
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       updateDecorations(editor);
@@ -236,7 +236,7 @@ export function activate(context) {
       debounceTimer = setTimeout(() => updateDecorations(editor), 120);
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (!e.affectsConfiguration('markdownTables')) return;
+      if (!e.affectsConfiguration('markdownGhostTables')) return;
       refreshVisibleEditors();
       updateTabContext();
       updateStatusBar();
@@ -247,7 +247,7 @@ export function activate(context) {
     vscode.window.onDidChangeTextEditorSelection((e) => {
       const doc = e.textEditor.document;
       const inTable = doc.languageId === 'markdown' && /^\s*\|/.test(doc.lineAt(e.selections[0].active.line).text);
-      vscode.commands.executeCommand('setContext', 'markdownTables.inTable', inTable);
+      vscode.commands.executeCommand('setContext', 'markdownGhostTables.inTable', inTable);
     }),
 
     // format-on-save: normalizes to the current mode (e.g. per repo in .vscode/settings.json)
