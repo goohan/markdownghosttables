@@ -2,7 +2,7 @@
   "name": "markdownghosttables",
   "displayName": "Markdown Ghost Tables",
   "description": "Compact markdown tables that still look aligned: virtual (ghost) column alignment, per-column colors, compact/expand commands, format-on-save and optional Tab cell navigation.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "goohan",
   "license": "MIT",
   "icon": "assets/icon.png",
@@ -42,18 +42,22 @@
       {
         "command": "markdownTables.expand",
         "title": "Markdown Tables: Expand tables (align with real spaces)"
+      },
+      {
+        "command": "markdownTables.menu",
+        "title": "Markdown Tables: Toggle features (status bar menu)"
       }
     ],
     "keybindings": [
       {
         "command": "markdownTables.nextCell",
         "key": "tab",
-        "when": "config.markdownTables.tabNavigation && !markdownTables.mtInstalled && markdownTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
+        "when": "markdownTables.tabOurs && markdownTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
       },
       {
         "command": "markdownTables.prevCell",
         "key": "shift+tab",
-        "when": "config.markdownTables.tabNavigation && !markdownTables.mtInstalled && markdownTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
+        "when": "markdownTables.tabOurs && markdownTables.inTable && editorTextFocus && !editorReadonly && editorLangId == 'markdown' && !suggestWidgetVisible && !editorTabMovesFocus && !inlineSuggestionVisible && !editorHasMultipleSelections"
       }
     ],
     "configuration": {
@@ -74,29 +78,24 @@
           "default": true,
           "description": "Color each table column with a subtle background (rainbow-style) for readability."
         },
-        "markdownTables.formatOnSave": {
+        "markdownTables.mode": {
           "type": "string",
           "enum": [
-            "off",
             "compact",
             "expand"
           ],
-          "default": "off",
-          "description": "Normalize all tables to this resting state when saving a markdown file. Teams can commit this per repo in .vscode/settings.json."
+          "default": "compact",
+          "description": "The table mode: 'compact' (no alignment padding in the file; ghost alignment covers the screen) or 'expand' (real spaces). Drives format-on-save and Tab formatting. Teams can commit this per repo in .vscode/settings.json."
+        },
+        "markdownTables.formatOnSave": {
+          "type": "boolean",
+          "default": false,
+          "description": "Normalize all tables to the mode when saving a markdown file."
         },
         "markdownTables.tabNavigation": {
           "type": "boolean",
           "default": false,
-          "description": "Tab/Shift+Tab inside a table formats it and jumps between cells. Off by default; automatically yields if the Markdown Table extension (takumii.markdowntable) is installed."
-        },
-        "markdownTables.tabFormatMode": {
-          "type": "string",
-          "enum": [
-            "expand",
-            "compact"
-          ],
-          "default": "expand",
-          "description": "How the table is formatted while navigating with Tab (real alignment is comfortable while editing; format-on-save restores the resting state)."
+          "description": "Tab/Shift+Tab inside a table formats it to the mode and jumps between cells. Off by default. If the Markdown Table extension (takumii.markdowntable) is installed and the mode is 'expand', its Tab wins; in 'compact' mode this extension takes the Tab."
         }
       }
     }

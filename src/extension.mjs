@@ -16,12 +16,15 @@ const PALETTE = [
   'rgba(181, 206, 168, 0.08)'
 ];
 const NBSP = ' '; // regular spaces can collapse in contentText; nbsp guarantees width
+const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 
 let ghostType;
 let columnTypes = [];
 let debounceTimer;
+let statusItem;
 
 const config = () => vscode.workspace.getConfiguration('markdownTables');
+const currentMode = () => (config().get('mode') === 'expand' ? 'expand' : 'compact');
 const fullRange = (doc) => new vscode.Range(0, 0, doc.lineCount - 1, doc.lineAt(doc.lineCount - 1).text.length);
 const ghostColor = () => new vscode.ThemeColor('editorGhostText.foreground');
 
@@ -88,7 +91,8 @@ async function formatDocument(mode) {
   vscode.window.setStatusBarMessage(`Markdown Ghost Tables: ${tables} table(s) ${mode === 'compact' ? 'compacted' : 'expanded'}`, 3000);
 }
 
-// Tab: format the table under the cursor and jump between cells (delta = +1 / -1)
+// Tab: format the table under the cursor to the current mode and jump between
+// cells (delta = +1 / -1)
 async function moveCell(delta) {
   const editor = vscode.window.activeTextEditor;
   if (!editor || editor.document.languageId !== 'markdown') return;
@@ -115,8 +119,8 @@ async function moveCell(delta) {
   const needNewRow = target >= positions.length;
   if (target < 0) target = 0;
 
-  // format the block to the editing mode (+ new row if Tab at the end)
-  const mode = config().get('tabFormatMode');
+  // format the block to the current mode (+ new row if Tab at the end)
+  const mode = currentMode();
   const blockLines = [];
   for (let l = table.startLine; l <= table.endLine; l++) blockLines.push(doc.lineAt(l).text);
   if (needNewRow) blockLines.push(`${table.rows[0].indent}| ${Array(table.columnCount).fill('').join(' | ')} |`);
@@ -140,6 +144,66 @@ async function moveCell(delta) {
   if (cell) editor.selection = new vscode.Selection(destRow.line, cell.start, destRow.line, cell.end);
 }
 
+// ------------------------------------------------------- status bar + menu
+
+// Tab ownership: ours when enabled AND (Markdown Table is absent, or the mode
+// is compact — MT aligns with real spaces, so in expand mode its Tab wins).
+function updateTabContext() {
+  const mt = !!vscode.extensions.getExtension(MT_ID);
+  const ours = !!config().get('tabNavigation') && (!mt || currentMode() === 'compact');
+  vscode.commands.executeCommand('setContext', 'markdownTables.tabOurs', ours);
+}
+
+function updateStatusBar() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'markdown') {
+    statusItem.hide();
+    return;
+  }
+  const cfg = config();
+  const off = [
+    !cfg.get('ghostAlign') && 'ghost off',
+    !cfg.get('columnColors') && 'colors off'
+  ].filter(Boolean).join(', ');
+  statusItem.text = `$(table) ${currentMode()}${off ? ` (${off})` : ''}`;
+  statusItem.tooltip = 'Markdown Ghost Tables — click to toggle features';
+  statusItem.show();
+}
+
+async function updateSetting(key, value) {
+  // Respect where the setting currently lives: a workspace override keeps
+  // winning otherwise (e.g. a repo-declared mode in .vscode/settings.json).
+  const info = config().inspect(key);
+  const target = info?.workspaceValue !== undefined
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
+  await config().update(key, value, target);
+}
+
+async function showMenu() {
+  const cfg = config();
+  const items = [
+    { key: 'ghostAlign', label: 'Ghost alignment', description: 'virtual column alignment, no spaces written', picked: !!cfg.get('ghostAlign') },
+    { key: 'columnColors', label: 'Column colors', description: 'rainbow column backgrounds', picked: !!cfg.get('columnColors') },
+    { key: 'mode', label: 'Expand mode', description: 'checked: align with real spaces · unchecked: compact', picked: currentMode() === 'expand' },
+    { key: 'tabNavigation', label: 'Tab navigation', description: 'Tab formats the table to the mode and jumps between cells', picked: !!cfg.get('tabNavigation') },
+    { key: 'formatOnSave', label: 'Format on save', description: 'normalize all tables to the mode when saving', picked: cfg.get('formatOnSave') === true }
+  ];
+  const picked = await vscode.window.showQuickPick(items, {
+    canPickMany: true,
+    title: 'Markdown Ghost Tables',
+    placeHolder: 'Check the features to enable'
+  });
+  if (!picked) return; // dismissed
+  const on = new Set(picked.map((i) => i.key));
+  for (const item of items) {
+    const want = on.has(item.key);
+    if (want === item.picked) continue;
+    if (item.key === 'mode') await updateSetting('mode', want ? 'expand' : 'compact');
+    else await updateSetting(item.key, want);
+  }
+}
+
 // ---------------------------------------------------------------- activation
 
 export function activate(context) {
@@ -147,16 +211,24 @@ export function activate(context) {
   columnTypes = PALETTE.map((color) => vscode.window.createTextEditorDecorationType({ backgroundColor: color }));
   context.subscriptions.push(ghostType, ...columnTypes);
 
-  // coexistence: if Markdown Table is installed, the Tab key is theirs
-  vscode.commands.executeCommand('setContext', 'markdownTables.mtInstalled', !!vscode.extensions.getExtension('takumii.markdowntable'));
+  statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  statusItem.command = 'markdownTables.menu';
+  context.subscriptions.push(statusItem);
+
+  updateTabContext();
+  updateStatusBar();
 
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownTables.compact', () => formatDocument('compact')),
     vscode.commands.registerCommand('markdownTables.expand', () => formatDocument('expand')),
     vscode.commands.registerCommand('markdownTables.nextCell', () => moveCell(1)),
     vscode.commands.registerCommand('markdownTables.prevCell', () => moveCell(-1)),
+    vscode.commands.registerCommand('markdownTables.menu', showMenu),
 
-    vscode.window.onDidChangeActiveTextEditor(updateDecorations),
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      updateDecorations(editor);
+      updateStatusBar();
+    }),
     vscode.workspace.onDidChangeTextDocument((e) => {
       const editor = vscode.window.activeTextEditor;
       if (!editor || e.document !== editor.document) return;
@@ -164,8 +236,12 @@ export function activate(context) {
       debounceTimer = setTimeout(() => updateDecorations(editor), 120);
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('markdownTables')) refreshVisibleEditors();
+      if (!e.affectsConfiguration('markdownTables')) return;
+      refreshVisibleEditors();
+      updateTabContext();
+      updateStatusBar();
     }),
+    vscode.extensions.onDidChange(updateTabContext),
 
     // context for the Tab keybinding: is the cursor on a table line?
     vscode.window.onDidChangeTextEditorSelection((e) => {
@@ -174,13 +250,12 @@ export function activate(context) {
       vscode.commands.executeCommand('setContext', 'markdownTables.inTable', inTable);
     }),
 
-    // format-on-save: normalizes to the declared resting state (e.g. per repo in .vscode/settings.json)
+    // format-on-save: normalizes to the current mode (e.g. per repo in .vscode/settings.json)
     vscode.workspace.onWillSaveTextDocument((e) => {
       if (e.document.languageId !== 'markdown') return;
-      const mode = config().get('formatOnSave');
-      if (mode !== 'compact' && mode !== 'expand') return;
+      if (config().get('formatOnSave') !== true) return;
       const text = e.document.getText();
-      const { text: out } = formatText(text, mode);
+      const { text: out } = formatText(text, currentMode());
       if (out !== text) e.waitUntil(Promise.resolve([vscode.TextEdit.replace(fullRange(e.document), out)]));
     })
   );
