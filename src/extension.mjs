@@ -76,15 +76,23 @@ function updateDecorations(editor) {
             // Price accepted: the crossed pipe tints with the column color —
             // that is what buys a real, zoom-proof background behind the
             // pill (the alternative was the naked-sliver saga of 0.2.9-18).
+            // Ownership rule: every pipe is painted exactly ONCE, by the
+            // column to its LEFT — consistent in every row. When the next
+            // cell is right-aligned, this cell's backing extends one char
+            // further (the neighbor's leading space) so it also covers the
+            // neighbor's left-glued pill; the neighbor then starts its band
+            // after that space. Without this, both cells backed the shared
+            // pipe and the stacked colors matched neither column, changing
+            // per row. Residual compromise: a right-aligned pill sits on the
+            // LEFT column's base color (subtle at real alphas).
             const bucket = buckets[c % columnTypes.length];
-            const rightCol = table.alignments[c] === 'right' && !row.isSeparator;
-            if (rightCol) {
-              bucket.push(new vscode.Range(row.line, Math.max(0, cell.segStart - 1), row.line, cell.segStart + 1));
-              if (cell.segEnd > cell.segStart + 1) bucket.push(new vscode.Range(row.line, cell.segStart + 1, row.line, cell.segEnd));
-            } else {
-              if (cell.segEnd - 1 > cell.segStart) bucket.push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd - 1));
-              bucket.push(new vscode.Range(row.line, cell.segEnd - 1, row.line, cell.segEnd + 1));
-            }
+            const rightCol = !row.isSeparator && table.alignments[c] === 'right';
+            const nxt = row.cells[c + 1];
+            const nextRight = !row.isSeparator && nxt && table.alignments[c + 1] === 'right' && nxt.segEnd > nxt.segStart;
+            if (rightCol && c === 0) bucket.push(new vscode.Range(row.line, Math.max(0, cell.segStart - 1), row.line, cell.segStart + 1));
+            const bandStart = rightCol && c > 0 ? cell.segStart + 1 : cell.segStart;
+            if (cell.segEnd - 1 > bandStart) bucket.push(new vscode.Range(row.line, bandStart, row.line, cell.segEnd - 1));
+            bucket.push(new vscode.Range(row.line, cell.segEnd - 1, row.line, nextRight ? nxt.segStart + 1 : cell.segEnd + 1));
           }
           if (!wantGhost) return;
           // truly differential, measured on the whole segment: aligned, a

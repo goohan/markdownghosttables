@@ -21,7 +21,7 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 **Compacted table 2 (right alignment column):**
 
 | Column A | Column  B | Column C | Col D | Col E |
-| --- | ---: | --- | --- | --- |
+| --- | --: | --- | --- | --- |
 | A1 | dasdf | | | |
 | A2 | B2 | | | |
 | A3 | B3 | | | |
