@@ -109,7 +109,9 @@ export function formatTable(lines, mode) {
     return rows.map((row, rowIndex) => {
       const cells = row.cells.map((cell, i) =>
         rowIndex === 1 ? separatorCell(alignments[i] ?? 'none', 3) : cell);
-      return `${row.indent}| ${cells.join(' | ')} |`;
+      // one space on each side of the text; an EMPTY cell collapses to a
+      // single shared space (`| |`, the linted convention), not two
+      return `${row.indent}|${cells.map((c) => (c ? ` ${c} ` : ' ')).join('|')}|`;
     });
   }
 

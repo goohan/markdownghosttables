@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.6
+
+- Compact formatting of EMPTY cells follows the linted convention: `| |` (one shared space), not the accidental `|  |` the joiner produced. Applies to the commands, format-on-save and Tab navigation alike (core change).
+
 ## 0.2.5
 
 - Empty cells fixed (they overflowed the row: with empty text the splitter counts every real space as leading, so the differential saw zero padding and the ghost added the full column width on top). The differential is now measured on the whole segment — aligned, a segment spans width+2 columns; the ghost supplies only what the real characters don't — which is simpler, symmetric for right-aligned columns, and makes empty cells fall out naturally (anchored before their last real space: ghost, dot, pipe like every sibling row).
