@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.12
+
+- Truly flat cells: with column colors on, the ghost paints no background of its own. The band's background rectangle already covers the range's full visual span — injected ghost widgets included — so the ghost's own paint stacked a second layer of the same shade and the blocks still read darker (a saw following text lengths, even with equal alphas in 0.2.11). Gray mode (colors off) keeps the ghost tint and rounded corners.
+
 ## 0.2.11
 
 - Uniform cell color: the ghost blocks now take exactly the band's shade (same hue, same alpha), so the whole cell paints flat wall to wall. The stronger ghost alpha of 0.2.9 made the soft band read as unpainted and the blocks as stairs following the text lengths (spotted by Johan). Real vs virtual is told by the whitespace dots; gray mode (colors off) keeps the tint contrast and the rounded corners.
