@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.10
+
+- Color band polish: the ghost's rounded corners now apply only in gray mode (colors off) — with the bands on they notched dark editor background around each block, reading as an ugly margin; flush blocks make the whole cell read colored wall to wall. Palette saturation raised a notch, mainly to pull the first two hues (blue and teal) apart.
+
 ## 0.2.9
 
 - Column colors paint continuous bands (chosen by Johan over color-means-real and text-only): the whole cell segment — text, real padding and the separator row — in the column's soft shade, with ghost padding in the same hue at a stronger alpha. Before, the color hugged only the cell text, so compact tables showed a tiny colored box plus a big neutral slab per cell and the rainbow barely read. `ghostTint` remains the ghost background when column colors are off.

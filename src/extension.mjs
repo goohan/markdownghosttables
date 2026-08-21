@@ -10,22 +10,24 @@ import { analyzeText, formatText, formatTable, measure } from './core.mjs';
 // the soft alpha, and its ghost blocks with the same hue at GHOST_ALPHA, so
 // the column reads as one continuous band with a subtly stronger virtual part.
 const PALETTE = [
-  { rgb: '86, 156, 214', alpha: 0.07 },
-  { rgb: '78, 201, 176', alpha: 0.07 },
-  { rgb: '220, 220, 170', alpha: 0.08 },
-  { rgb: '197, 134, 192', alpha: 0.07 },
-  { rgb: '215, 186, 125', alpha: 0.08 },
-  { rgb: '156, 220, 254', alpha: 0.07 },
-  { rgb: '181, 206, 168', alpha: 0.08 }
+  { rgb: '70, 150, 235', alpha: 0.07 },
+  { rgb: '55, 212, 155', alpha: 0.07 },
+  { rgb: '228, 222, 140', alpha: 0.08 },
+  { rgb: '208, 122, 208', alpha: 0.07 },
+  { rgb: '230, 178, 100', alpha: 0.08 },
+  { rgb: '125, 215, 255', alpha: 0.07 },
+  { rgb: '160, 212, 138', alpha: 0.08 }
 ];
 const GHOST_ALPHA = 0.16;
 const ghostBg = (c) => `rgba(${PALETTE[c % PALETTE.length].rgb}, ${GHOST_ALPHA})`;
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 // rounded ends on the ghost background (via the textDecoration CSS escape
-// hatch — pure paint, zero geometry): two blocks meeting at a pipe (a
-// left-aligned cell next to a right-aligned one anchors both ghosts to the
-// same `|`) read as two blocks instead of one solid slab
+// hatch — pure paint, zero geometry), ONLY while column colors are off: in
+// gray mode two blocks meeting at a pipe (a left-aligned cell next to a
+// right-aligned one anchors both ghosts to the same `|`) read as one solid
+// slab without them. With colors on, hues already separate neighbors and the
+// corners would notch dark editor background out of the column band.
 const GHOST_CSS = 'none; border-radius: 3px';
 
 let ghostType;
@@ -78,7 +80,7 @@ function updateDecorations(editor) {
             ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
           const bg = wantColors ? ghostBg(c) : tint;
           if (row.isSeparator) {
-            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: bg, textDecoration: GHOST_CSS };
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: bg, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
@@ -88,7 +90,7 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: bg, textDecoration: GHOST_CSS };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: bg, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
