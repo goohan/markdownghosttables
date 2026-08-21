@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.21
+
+- Pipe ownership rule: every pipe is painted exactly once, by the column to its left, consistent in every row. Next to a right-aligned column both cells used to back the shared pipe — stacked colors that matched neither column and changed per row (spotted by Johan's red circles). The left cell's backing now extends one char further to also cover the right-aligned neighbor's pill; residual compromise: that pill sits on the left column's base color (subtle at real alphas).
+
 ## 0.2.20
 
 - Rounded pill corners in color mode too: safe now that the backing ranges exist — the corner notches reveal the band behind, not naked editor background.
