@@ -4,7 +4,7 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 
 **Aligned/Expanded table:**
 
-| Column A | Column B     My | Column C |
+| Column A | Column        B | Column C |
 | -------- | --------------- | -------- |
 | A1       | B1              | C1       |
 | A2       | B2              | C2       |
@@ -12,8 +12,9 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 
 **Compacted table:**
 
-| Column A | Column    B | Column        C |
-| --- | --- | --- |
-| A1 | B1 | C1 |
-| A2 | B2 | C2 |
-| A3 | B3 | C3 |
+| Column A | Column  B |
+| --- | --- |
+| A1 | B1 abcde |
+| A2 | B2 |
+| A3 | B3 |
+

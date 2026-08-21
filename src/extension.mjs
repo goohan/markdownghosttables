@@ -55,20 +55,30 @@ function updateDecorations(editor) {
           const realPad = alignRight ? cell.start - cell.segStart : cell.segEnd - cell.end;
           const needed = (table.widths[c] ?? 3) - measure(cell.text) - Math.max(0, realPad - 1);
           if (needed <= 0) return;
+          // The ghost is anchored to a REAL character (before/after attachment
+          // on a one-char range): on an empty range VS Code decides on its own
+          // which character the widget associates with, and it glued the real
+          // padding space into the block (unselectable dot fused left of the
+          // ghost, unpainted gap before the `|`). Explicit anchors give the
+          // canonical order: text + ghost + real space + `|` (mirrored when
+          // right-aligned; dashes + ghost dashes + `:`/space in the separator).
+          // Cells with no adjacent real padding fall back to an empty anchor.
+          const push = (start, end, side, content) =>
+            ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
           if (row.isSeparator) {
-            // the separator is padded with ghost dashes, before the trailing `:` if any
-            const at = cell.text.endsWith(':') ? cell.end - 1 : cell.end;
-            ghost.push({
-              range: new vscode.Range(row.line, at, row.line, at),
-              renderOptions: { after: { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: tint } }
-            });
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: tint };
+            if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
+            else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
+            else push(cell.end, cell.end, 'after', content);
           } else {
-            const at = alignRight ? cell.start : cell.end;
-            const attachment = { contentText: NBSP.repeat(needed), backgroundColor: tint };
-            ghost.push({
-              range: new vscode.Range(row.line, at, row.line, at),
-              renderOptions: alignRight ? { before: attachment } : { after: attachment }
-            });
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: tint };
+            if (alignRight) {
+              if (cell.start > cell.segStart) push(cell.start - 1, cell.start, 'after', content);
+              else push(cell.start, cell.start, 'before', content);
+            } else {
+              if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
+              else push(cell.end, cell.end, 'after', content);
+            }
           }
         });
       }
