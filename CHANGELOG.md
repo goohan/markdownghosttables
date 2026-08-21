@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.8
+
+- Rounded ends on the ghost background (pure paint, zero geometry): when a left-aligned cell sits next to a right-aligned one, both ghosts anchor to the same pipe and read as one solid slab — the rounded corners make them read as two blocks with the pipe in the notch.
+
 ## 0.2.7
 
 - Natural typing at the end of a cell: the ghost now glues to the cell's far pipe (mirrored for right-aligned columns), so all real content — text plus its reglamentary space — stays contiguous and the caret sits right after the text. Before, the ghost lived between text and space and the cursor could only land after the block. Separator rows keep their previous anchoring (continuous dash line).

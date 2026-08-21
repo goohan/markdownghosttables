@@ -17,6 +17,11 @@ const PALETTE = [
 ];
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
+// rounded ends on the ghost background (via the textDecoration CSS escape
+// hatch — pure paint, zero geometry): two blocks meeting at a pipe (a
+// left-aligned cell next to a right-aligned one anchors both ghosts to the
+// same `|`) read as two blocks instead of one solid slab
+const GHOST_CSS = 'none; border-radius: 3px';
 
 let ghostType;
 let columnTypes = [];
@@ -67,7 +72,7 @@ function updateDecorations(editor) {
           const push = (start, end, side, content) =>
             ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
           if (row.isSeparator) {
-            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: tint };
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: tint, textDecoration: GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
@@ -77,7 +82,7 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: tint };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: tint, textDecoration: GHOST_CSS };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);

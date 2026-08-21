@@ -2,7 +2,7 @@
   "name": "markdownghosttables",
   "displayName": "Markdown Ghost Tables",
   "description": "Compact markdown tables that still look aligned: virtual (ghost) column alignment, per-column colors, compact/expand commands, format-on-save and optional Tab cell navigation.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "publisher": "goohan",
   "license": "MIT",
   "icon": "assets/icon.png",
