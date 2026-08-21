@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.19
+
+- The pill's background is finally REAL: the editor paints range backgrounds as full-line rectangles that cover widgets between the range's characters (the separator's ghost always enjoyed this) but never widgets at range edges — so each data ghost now gets a backing range crossing its gap (last segment char + closing pipe, mirrored for right-aligned columns), with the rest of the cell as an adjacent range of the same color. Accepted price: the crossed pipe tints with the column color. This replaces the glyph-height own-box hack (0.2.18), which the Ctrl+scroll zoom broke; one dial for all rows now — ghostShade 0 = fully uniform cell, higher = pill.
+
 ## 0.2.18
 
 - The naked slivers above/below the data pills are gone (diagnosed with the shade dials cranked and Johan's red marks): attachment boxes are glyph-high, not line-high, so their background left the line's extra height unpainted — the band never shows this because the editor paints range backgrounds as full-line rectangles, which is also why the band-backed separator pill had no slivers. Data pills now get an explicit line-height-sized box (from editor.lineHeight / 1.35 × fontSize, recomputed when those settings change).

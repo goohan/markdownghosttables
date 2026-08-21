@@ -48,20 +48,6 @@ let statusItem;
 
 const config = () => vscode.workspace.getConfiguration('markdownGhostTables');
 
-// The attachment box is glyph-high, not line-high: without help its
-// background leaves naked slivers above/below the pill (the band, painted by
-// the editor as full-line rectangles, never has this problem — which is why
-// the separator's band-backed pill shows no slivers). Data pills get an
-// explicit line-height-sized box instead; VS Code's rule: lineHeight 0 →
-// 1.35 × fontSize, < 8 → multiplier over fontSize, ≥ 8 → pixels.
-function lineHeightPx() {
-  const ed = vscode.workspace.getConfiguration('editor');
-  const fontSize = ed.get('fontSize') || 14;
-  const lh = ed.get('lineHeight') || 0;
-  if (lh === 0) return Math.round(1.35 * fontSize);
-  if (lh < 8) return Math.round(lh * fontSize);
-  return Math.round(lh);
-}
 const currentMode = () => (config().get('mode') === 'expand' ? 'expand' : 'compact');
 const fullRange = (doc) => new vscode.Range(0, 0, doc.lineCount - 1, doc.lineAt(doc.lineCount - 1).text.length);
 const ghostColor = () => new vscode.ThemeColor('editorGhostText.foreground');
@@ -83,12 +69,24 @@ function updateDecorations(editor) {
       for (const row of table.rows) {
         row.cells.forEach((cell, c) => {
           if (wantColors && cell.segEnd > cell.segStart) {
-            // the band paints the cell's real characters only — pipes stay
-            // bare (Johan's call over pipe-tinted contiguous bands). Its
-            // background covers widgets injected BETWEEN its characters (the
-            // separator's ghost) but not widgets hanging at its edges: the
-            // pipe-glued data ghosts paint their own background instead.
-            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd));
+            // The editor paints range backgrounds as full-line rectangles
+            // that cover widgets injected BETWEEN the range's characters —
+            // never widgets hanging at its edges. So the pipe-glued ghosts
+            // get a BACKING range that crosses their gap (last segment char
+            // + closing pipe; mirrored for right-aligned cells), with the
+            // rest of the cell as a second adjacent range of the same color.
+            // Price accepted: the crossed pipe tints with the column color —
+            // that is what buys a real, zoom-proof background behind the
+            // pill (the alternative was the naked-sliver saga of 0.2.9-18).
+            const bucket = buckets[c % columnTypes.length];
+            const rightCol = table.alignments[c] === 'right' && !row.isSeparator;
+            if (rightCol) {
+              bucket.push(new vscode.Range(row.line, Math.max(0, cell.segStart - 1), row.line, cell.segStart + 1));
+              if (cell.segEnd > cell.segStart + 1) bucket.push(new vscode.Range(row.line, cell.segStart + 1, row.line, cell.segEnd));
+            } else {
+              if (cell.segEnd - 1 > cell.segStart) bucket.push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd - 1));
+              bucket.push(new vscode.Range(row.line, cell.segEnd - 1, row.line, cell.segEnd + 1));
+            }
           }
           if (!wantGhost) return;
           // truly differential, measured on the whole segment: aligned, a
@@ -111,11 +109,9 @@ function updateDecorations(editor) {
           const push = (start, end, side, content) =>
             ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
           if (row.isSeparator) {
-            // interior widget: the band paints behind it — no background of
-            // its own with colors on
-            // the separator's ghost is interior, so its own paint STACKS over
-            // the band (unlike the pipe-glued data ghosts) — same dial, its
-            // pill just starts from the band's shade
+            // every ghost is backed by the band now, so its own paint STACKS
+            // over it — one dial for all rows: 0 = fully uniform cell,
+            // higher = the pill stands out from the band's shade
             const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
@@ -126,12 +122,7 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = {
-              contentText: NBSP.repeat(needed),
-              backgroundColor: wantColors ? ghostBg(c, shade) : tint,
-              textDecoration: `${wantColors ? 'none' : GHOST_CSS}; display: inline-block; vertical-align: top`,
-              height: `${lineHeightPx()}px`
-            };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
@@ -351,8 +342,7 @@ export function activate(context) {
       debounceTimer = setTimeout(() => updateDecorations(editor), 120);
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      // editor.fontSize / lineHeight feed the pill's explicit box height
-      if (!e.affectsConfiguration('markdownGhostTables') && !e.affectsConfiguration('editor.fontSize') && !e.affectsConfiguration('editor.lineHeight')) return;
+      if (!e.affectsConfiguration('markdownGhostTables')) return;
       if (e.affectsConfiguration('markdownGhostTables.bandShade')) buildColumnTypes();
       refreshVisibleEditors();
       updateTabContext();
