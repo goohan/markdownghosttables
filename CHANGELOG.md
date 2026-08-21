@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.16
+
+- The separator's ghost also answers to `ghostShade` (it was transparent under the band, so the dial didn't reach it): the whole table now tunes with one number. Johan's ideal mock shows the pill in every row, separator included.
+
 ## 0.2.15
 
 - New `ghostShade` setting: live multiplier over the column's alpha for the ghost background (default 0.7). Attachment and range backgrounds don't composite identically at equal rgba (1.0 rendered darker than the band, 0.5 lighter), so the uniform point is calibrated by eye — and above it the same dial makes the ghost stand out as a subtle pill.

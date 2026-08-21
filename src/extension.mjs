@@ -98,7 +98,10 @@ function updateDecorations(editor) {
           if (row.isSeparator) {
             // interior widget: the band paints behind it — no background of
             // its own with colors on
-            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? undefined : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            // the separator's ghost is interior, so its own paint STACKS over
+            // the band (unlike the pipe-glued data ghosts) — same dial, its
+            // pill just starts from the band's shade
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
