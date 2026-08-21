@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.9
+
+- Column colors paint continuous bands (chosen by Johan over color-means-real and text-only): the whole cell segment — text, real padding and the separator row — in the column's soft shade, with ghost padding in the same hue at a stronger alpha. Before, the color hugged only the cell text, so compact tables showed a tiny colored box plus a big neutral slab per cell and the rainbow barely read. `ghostTint` remains the ghost background when column colors are off.
+
 ## 0.2.8
 
 - Rounded ends on the ghost background (pure paint, zero geometry): when a left-aligned cell sits next to a right-aligned one, both ghosts anchor to the same pipe and read as one solid slab — the rounded corners make them read as two blocks with the pipe in the notch.

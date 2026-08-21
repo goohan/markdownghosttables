@@ -5,16 +5,21 @@
 import * as vscode from 'vscode';
 import { analyzeText, formatText, formatTable, measure } from './core.mjs';
 
-// Per-column background palette (low alpha: works on light and dark themes)
+// Per-column background palette (low alpha: works on light and dark themes).
+// A column paints its WHOLE cells — text, real padding, separator row — with
+// the soft alpha, and its ghost blocks with the same hue at GHOST_ALPHA, so
+// the column reads as one continuous band with a subtly stronger virtual part.
 const PALETTE = [
-  'rgba(86, 156, 214, 0.07)',
-  'rgba(78, 201, 176, 0.07)',
-  'rgba(220, 220, 170, 0.08)',
-  'rgba(197, 134, 192, 0.07)',
-  'rgba(215, 186, 125, 0.08)',
-  'rgba(156, 220, 254, 0.07)',
-  'rgba(181, 206, 168, 0.08)'
+  { rgb: '86, 156, 214', alpha: 0.07 },
+  { rgb: '78, 201, 176', alpha: 0.07 },
+  { rgb: '220, 220, 170', alpha: 0.08 },
+  { rgb: '197, 134, 192', alpha: 0.07 },
+  { rgb: '215, 186, 125', alpha: 0.08 },
+  { rgb: '156, 220, 254', alpha: 0.07 },
+  { rgb: '181, 206, 168', alpha: 0.08 }
 ];
+const GHOST_ALPHA = 0.16;
+const ghostBg = (c) => `rgba(${PALETTE[c % PALETTE.length].rgb}, ${GHOST_ALPHA})`;
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 // rounded ends on the ghost background (via the textDecoration CSS escape
@@ -48,8 +53,8 @@ function updateDecorations(editor) {
     for (const table of analyzeText(editor.document.getText())) {
       for (const row of table.rows) {
         row.cells.forEach((cell, c) => {
-          if (wantColors && cell.end > cell.start && !row.isSeparator) {
-            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.start, row.line, cell.end));
+          if (wantColors && cell.segEnd > cell.segStart) {
+            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd));
           }
           if (!wantGhost) return;
           // truly differential, measured on the whole segment: aligned, a
@@ -71,8 +76,9 @@ function updateDecorations(editor) {
           // Cells with no adjacent real padding fall back to an empty anchor.
           const push = (start, end, side, content) =>
             ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
+          const bg = wantColors ? ghostBg(c) : tint;
           if (row.isSeparator) {
-            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: tint, textDecoration: GHOST_CSS };
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: bg, textDecoration: GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
@@ -82,7 +88,7 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: tint, textDecoration: GHOST_CSS };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: bg, textDecoration: GHOST_CSS };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
@@ -264,7 +270,7 @@ async function showMenu() {
 
 export function activate(context) {
   ghostType = vscode.window.createTextEditorDecorationType({});
-  columnTypes = PALETTE.map((color) => vscode.window.createTextEditorDecorationType({ backgroundColor: color }));
+  columnTypes = PALETTE.map((p) => vscode.window.createTextEditorDecorationType({ backgroundColor: `rgba(${p.rgb}, ${p.alpha})` }));
   context.subscriptions.push(ghostType, ...columnTypes);
 
   statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
