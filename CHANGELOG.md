@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.7
+
+- Natural typing at the end of a cell: the ghost now glues to the cell's far pipe (mirrored for right-aligned columns), so all real content — text plus its reglamentary space — stays contiguous and the caret sits right after the text. Before, the ghost lived between text and space and the cursor could only land after the block. Separator rows keep their previous anchoring (continuous dash line).
+
 ## 0.2.6
 
 - Compact formatting of EMPTY cells follows the linted convention: `| |` (one shared space), not the accidental `|  |` the joiner produced. Applies to the commands, format-on-save and Tab navigation alike (core change).

@@ -72,16 +72,17 @@ function updateDecorations(editor) {
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
           } else {
+            // data cells: the ghost glues to the cell's FAR pipe, so all real
+            // content — text plus its reglamentary space — stays contiguous
+            // and the caret lands naturally at the end of the text when
+            // typing (with the ghost in between, the cursor could only sit
+            // after the block). Mirrored for right-aligned columns.
             const content = { contentText: NBSP.repeat(needed), backgroundColor: tint };
-            if (!cell.text && cell.segEnd > cell.segStart) {
-              // empty cell: ghost before its last real space — ghost, dot,
-              // pipe, like every sibling row
-              push(cell.segEnd - 1, cell.segEnd, 'before', content);
-            } else if (alignRight) {
-              if (cell.start > cell.segStart) push(cell.start - 1, cell.start, 'after', content);
+            if (alignRight) {
+              if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
             } else {
-              if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
+              if (cell.segEnd > cell.segStart) push(cell.segEnd - 1, cell.segEnd, 'after', content);
               else push(cell.end, cell.end, 'after', content);
             }
           }
