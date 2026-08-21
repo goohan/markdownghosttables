@@ -23,7 +23,9 @@ const SEPARATOR_CELL_RE = /^:?-+:?$/;
 const width = (s) => [...s].length;
 
 // Splits a row into cells WITH positions (start/end columns of the trimmed
-// text within the original line) — what the extension's decorations need.
+// text within the original line, plus segStart/segEnd — the segment bounds
+// between the delimiting `|`s, so consumers can tell how much real padding a
+// cell already carries) — what the extension's decorations need.
 // splitRow (below) is the simple view used by the formatter.
 export function splitRowDetailed(line) {
   const indent = line.match(/^\s*/)[0];
@@ -41,7 +43,7 @@ export function splitRowDetailed(line) {
         const leading = raw.match(/^\s*/)[0].length;
         const text = raw.trim();
         const start = segStart + leading;
-        cells.push({ text, start, end: start + text.length });
+        cells.push({ text, start, end: start + text.length, segStart, segEnd: i });
       }
       segStart = i + 1;
     }

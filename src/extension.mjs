@@ -15,7 +15,7 @@ const PALETTE = [
   'rgba(156, 220, 254, 0.07)',
   'rgba(181, 206, 168, 0.08)'
 ];
-const NBSP = ' '; // regular spaces can collapse in contentText; nbsp guarantees width
+const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 
 let ghostType;
@@ -47,7 +47,13 @@ function updateDecorations(editor) {
             buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.start, row.line, cell.end));
           }
           if (!wantGhost) return;
-          const needed = (table.widths[c] ?? 3) - measure(cell.text);
+          // truly differential: discount the real padding the cell already
+          // carries (beyond the canonical single space around each `|`), so an
+          // already-expanded cell gets no ghost and a half-expanded one only
+          // gets the difference
+          const alignRight = table.alignments[c] === 'right' && !row.isSeparator;
+          const realPad = alignRight ? cell.start - cell.segStart : cell.segEnd - cell.end;
+          const needed = (table.widths[c] ?? 3) - measure(cell.text) - Math.max(0, realPad - 1);
           if (needed <= 0) return;
           if (row.isSeparator) {
             // the separator is padded with ghost dashes, before the trailing `:` if any
@@ -57,7 +63,6 @@ function updateDecorations(editor) {
               renderOptions: { after: { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: tint } }
             });
           } else {
-            const alignRight = table.alignments[c] === 'right';
             const at = alignRight ? cell.start : cell.end;
             const attachment = { contentText: NBSP.repeat(needed), backgroundColor: tint };
             ghost.push({
