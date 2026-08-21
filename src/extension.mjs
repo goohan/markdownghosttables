@@ -163,14 +163,30 @@ function updateDecorations(editor) {
                 push(cell.start, cell.start + 1, 'before', content);
               }
             } else {
-              // block [SP + ghosts] glued to the pipe, attached 'before' the
-              // pipe → belongs to the trailing anchor SP (Rosetta rule).
-              // A separator-like flip (ghosts LEFT of the SP) was tried and
-              // reverted: mid-run widgets desync the whitespace-dot layer
-              // (the dot painted inside the pill, the SP's cell left bare)
-              // and typed SPs pile up on the block's wrong side.
-              if (cell.segEnd > cell.end && lineLen > cell.segEnd) {
-                push(cell.segEnd, cell.segEnd + 1, 'before', content);
+              // Johan's sequence model, the separator's exact geometry: the
+              // anchor is the LAST real trailing SP (glued to the pipe) and
+              // the ghosts deploy to its LEFT — attachment 'before' the
+              // anchor SP, the only mid-run shape that never desynced the
+              // whitespace-dot layer all session ('after' mid-run does).
+              // Extra typed SPs stay left of the pill; the anchor itself is
+              // not painted; the pill sits interior to the plain band, so
+              // bare pipes cost nothing here.
+              // 'before' the anchor SP — the only clean shape here: 'after'
+              // on the preceding char (tried, v0.2.111) would hand the block
+              // to the SP, but 'after' mid-run desyncs the whitespace-dot
+              // layer (third confirmation): the anchor's dot paints left of
+              // the pill and the cell next to the pipe goes bare. Physics:
+              // SP-at-the-pipe and block-belongs-to-SP cannot coexist.
+              // Final shape (Johan's pick): anchor = the LAST trailing SP,
+              // sitting at the cell's end next to the pipe, ghosts deploying
+              // to its left; extra SPs accumulate left of the pill; the
+              // anchor is not painted. Ownership flows LEFT (the block sweeps
+              // with what precedes it): 'after' would hand it to the SP but
+              // desyncs the whitespace dots (confirmed 3x), and a wide
+              // anchor range does not drag ownership (tested) — the Rosetta
+              // rule is positional. This is the physics optimum.
+              if (cell.segEnd > cell.end) {
+                push(cell.segEnd - 1, cell.segEnd, 'before', content);
               }
             }
           }
