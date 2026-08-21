@@ -71,12 +71,12 @@
         "markdownGhostTables.ghostTint": {
           "type": "string",
           "default": "rgba(128,128,128,0.10)",
-          "description": "Background tint of the ghost padding when column colors are off (with them on, the ghost takes its column's color in a stronger shade)."
+          "description": "Background tint of the ghost padding when column colors are off (with them on, the ghost takes its column's exact shade)."
         },
         "markdownGhostTables.columnColors": {
           "type": "boolean",
           "default": true,
-          "description": "Color each table column as a continuous band (rainbow-style): every cell's whole segment, separator row included; ghost padding shows the same hue in a stronger shade."
+          "description": "Color each table column as a continuous band (rainbow-style): every cell's whole segment, separator row included; ghost padding included in the same flat shade."
         },
         "markdownGhostTables.mode": {
           "type": "string",
