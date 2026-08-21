@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.23
+
+- The right-aligned column's left-flank backing now exists only where its pill exists (Johan's rule): pill-less rows — header, separator — keep the shared pipe purely left-colored. Where both pills flank a pipe, the pipe and both pills show a blend of the two columns: backing rectangles swallow boundary widgets on both sides, and half-and-half painting is not possible with these primitives — accepted as livable.
+
 ## 0.2.22
 
 - Right-aligned columns back their own left flank in every row (separator included): their pill rests on their OWN color — 0.2.21's merged backing put a neighbor-colored slab under it and even ate the neighbor's space in rows without pills. The only overlap left is the pipe character itself: a constant, column-stable blend mostly hidden by the glyph.
