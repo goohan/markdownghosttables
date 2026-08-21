@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.13
+
+- Uniform cell paint, for real this time: a range background covers its full visual span including widgets injected BETWEEN its characters, but not widgets hanging at its edges — which is why the separator (interior ghost) painted uniform while data cells (pipe-glued ghost) left an unpainted island. The band now includes the closing pipe, turning the pipe-glued ghost into an interior widget (pipes tint with their left column; bands read contiguous), and right-aligned cells anchor their ghost interior on the left (after the leading space — typing at the end of a right-aligned text never meets the ghost).
+
 ## 0.2.12
 
 - Truly flat cells: with column colors on, the ghost paints no background of its own. The band's background rectangle already covers the range's full visual span — injected ghost widgets included — so the ghost's own paint stacked a second layer of the same shade and the blocks still read darker (a saw following text lengths, even with equal alphas in 0.2.11). Gray mode (colors off) keeps the ghost tint and rounded corners.

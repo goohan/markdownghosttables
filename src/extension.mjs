@@ -57,7 +57,13 @@ function updateDecorations(editor) {
       for (const row of table.rows) {
         row.cells.forEach((cell, c) => {
           if (wantColors && cell.segEnd > cell.segStart) {
-            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd));
+            // the band includes the closing pipe: a range's background covers
+            // its full visual span INCLUDING widgets injected between its
+            // characters, but not widgets hanging at its edges — extending to
+            // the pipe turns the pipe-glued ghost into an interior widget, so
+            // the cell paints uniform wall to wall (pipes tint with their left
+            // column; bands read contiguous)
+            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd + 1));
           }
           if (!wantGhost) return;
           // truly differential, measured on the whole segment: aligned, a
@@ -93,7 +99,10 @@ function updateDecorations(editor) {
             // after the block). Mirrored for right-aligned columns.
             const content = { contentText: NBSP.repeat(needed), backgroundColor: bg, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (alignRight) {
-              if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
+              // interior anchor: after the leading space, before the text —
+              // covered by the band, and typing (at the END of a right-aligned
+              // text) never meets the ghost
+              if (cell.start > cell.segStart) push(cell.segStart, cell.segStart + 1, 'after', content);
               else push(cell.start, cell.start, 'before', content);
             } else {
               if (cell.segEnd > cell.segStart) push(cell.segEnd - 1, cell.segEnd, 'after', content);
