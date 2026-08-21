@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.14
+
+- Bare pipes are back (the pipe-tinted contiguous bands of 0.2.13 didn't convince) and the right-aligned ghost returns to its left-pipe anchor, whose typing behavior was right. The uniform look survives both reverts because the real fix was elsewhere: attachment backgrounds render about twice as strong as range backgrounds at the same rgba, so the edge-glued data ghosts now self-paint the column hue at HALF alpha (empirically calibrated); the separator's interior ghost stays transparent under the band.
+
 ## 0.2.13
 
 - Uniform cell paint, for real this time: a range background covers its full visual span including widgets injected BETWEEN its characters, but not widgets hanging at its edges — which is why the separator (interior ghost) painted uniform while data cells (pipe-glued ghost) left an unpainted island. The band now includes the closing pipe, turning the pipe-glued ghost into an interior widget (pipes tint with their left column; bands read contiguous), and right-aligned cells anchor their ghost interior on the left (after the leading space — typing at the end of a right-aligned text never meets the ghost).

@@ -21,6 +21,16 @@ const PALETTE = [
   { rgb: '125, 215, 255', alpha: 0.07 },
   { rgb: '160, 212, 138', alpha: 0.08 }
 ];
+// Attachment backgrounds render visually about twice as strong as range
+// backgrounds at the same rgba (empirical: v0.2.11 showed equal-alpha ghosts
+// as clearly darker blocks). The pipe-glued data ghosts sit outside the
+// band's pixel span, so they paint their own background: column hue at half
+// alpha, calibrated by eye to match the band.
+const GHOST_BG_FACTOR = 0.5;
+const ghostBg = (c) => {
+  const p = PALETTE[c % PALETTE.length];
+  return `rgba(${p.rgb}, ${p.alpha * GHOST_BG_FACTOR})`;
+};
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 // rounded ends on the ghost background (via the textDecoration CSS escape
@@ -57,13 +67,12 @@ function updateDecorations(editor) {
       for (const row of table.rows) {
         row.cells.forEach((cell, c) => {
           if (wantColors && cell.segEnd > cell.segStart) {
-            // the band includes the closing pipe: a range's background covers
-            // its full visual span INCLUDING widgets injected between its
-            // characters, but not widgets hanging at its edges — extending to
-            // the pipe turns the pipe-glued ghost into an interior widget, so
-            // the cell paints uniform wall to wall (pipes tint with their left
-            // column; bands read contiguous)
-            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd + 1));
+            // the band paints the cell's real characters only — pipes stay
+            // bare (Johan's call over pipe-tinted contiguous bands). Its
+            // background covers widgets injected BETWEEN its characters (the
+            // separator's ghost) but not widgets hanging at its edges: the
+            // pipe-glued data ghosts paint their own background instead.
+            buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.segStart, row.line, cell.segEnd));
           }
           if (!wantGhost) return;
           // truly differential, measured on the whole segment: aligned, a
@@ -85,9 +94,10 @@ function updateDecorations(editor) {
           // Cells with no adjacent real padding fall back to an empty anchor.
           const push = (start, end, side, content) =>
             ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
-          const bg = wantColors ? undefined : tint;
           if (row.isSeparator) {
-            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: bg, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            // interior widget: the band paints behind it — no background of
+            // its own with colors on
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? undefined : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
@@ -97,12 +107,9 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: bg, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (alignRight) {
-              // interior anchor: after the leading space, before the text —
-              // covered by the band, and typing (at the END of a right-aligned
-              // text) never meets the ghost
-              if (cell.start > cell.segStart) push(cell.segStart, cell.segStart + 1, 'after', content);
+              if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
             } else {
               if (cell.segEnd > cell.segStart) push(cell.segEnd - 1, cell.segEnd, 'after', content);
