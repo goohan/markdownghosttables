@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.20
+
+- Rounded pill corners in color mode too: safe now that the backing ranges exist — the corner notches reveal the band behind, not naked editor background.
+
 ## 0.2.19
 
 - The pill's background is finally REAL: the editor paints range backgrounds as full-line rectangles that cover widgets between the range's characters (the separator's ghost always enjoyed this) but never widgets at range edges — so each data ghost now gets a backing range crossing its gap (last segment char + closing pipe, mirrored for right-aligned columns), with the rest of the cell as an adjacent range of the same color. Accepted price: the crossed pipe tints with the column color. This replaces the glyph-height own-box hack (0.2.18), which the Ctrl+scroll zoom broke; one dial for all rows now — ghostShade 0 = fully uniform cell, higher = pill.

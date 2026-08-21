@@ -34,11 +34,9 @@ const ghostBg = (c, shade) => {
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 // rounded ends on the ghost background (via the textDecoration CSS escape
-// hatch — pure paint, zero geometry), ONLY while column colors are off: in
-// gray mode two blocks meeting at a pipe (a left-aligned cell next to a
-// right-aligned one anchors both ghosts to the same `|`) read as one solid
-// slab without them. With colors on, hues already separate neighbors and the
-// corners would notch dark editor background out of the column band.
+// hatch — pure paint, zero geometry): the pill reads as a pill. Safe in both
+// modes since the backing ranges exist — with colors on the corner notches
+// reveal the band behind, not naked editor background.
 const GHOST_CSS = 'none; border-radius: 3px';
 
 let ghostType;
@@ -112,7 +110,7 @@ function updateDecorations(editor) {
             // every ghost is backed by the band now, so its own paint STACKS
             // over it — one dial for all rows: 0 = fully uniform cell,
             // higher = the pill stands out from the band's shade
-            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: GHOST_CSS };
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
             else push(cell.end, cell.end, 'after', content);
@@ -122,7 +120,7 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: GHOST_CSS };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
