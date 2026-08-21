@@ -2,7 +2,7 @@
   "name": "markdownghosttables",
   "displayName": "Markdown Ghost Tables",
   "description": "Compact markdown tables that still look aligned: virtual (ghost) column alignment, per-column colors, compact/expand commands, format-on-save and optional Tab cell navigation.",
-  "version": "0.2.14",
+  "version": "0.2.15",
   "publisher": "goohan",
   "license": "MIT",
   "icon": "assets/icon.png",
@@ -67,6 +67,13 @@
           "type": "boolean",
           "default": true,
           "description": "Render virtual (ghost) padding so compact tables look column-aligned on screen without writing spaces into the file."
+        },
+        "markdownGhostTables.ghostShade": {
+          "type": "number",
+          "default": 0.7,
+          "minimum": 0,
+          "maximum": 3,
+          "description": "With column colors on: multiplier over the column's alpha for the ghost background. Tune live until the cell looks uniform; higher values make the ghost stand out as a subtle pill."
         },
         "markdownGhostTables.ghostTint": {
           "type": "string",

@@ -21,15 +21,15 @@ const PALETTE = [
   { rgb: '125, 215, 255', alpha: 0.07 },
   { rgb: '160, 212, 138', alpha: 0.08 }
 ];
-// Attachment backgrounds render visually about twice as strong as range
-// backgrounds at the same rgba (empirical: v0.2.11 showed equal-alpha ghosts
-// as clearly darker blocks). The pipe-glued data ghosts sit outside the
-// band's pixel span, so they paint their own background: column hue at half
-// alpha, calibrated by eye to match the band.
-const GHOST_BG_FACTOR = 0.5;
-const ghostBg = (c) => {
+// The pipe-glued data ghosts sit outside the band's pixel span, so they paint
+// their own background: the column hue with its alpha times the ghostShade
+// setting — a live dial, because attachment and range backgrounds do not
+// composite identically at equal rgba (empirical: 1.0 rendered darker than
+// the band, 0.5 lighter). At the value where the cell looks uniform the dial
+// doubles as the "pastille" control: above it, the ghost stands out.
+const ghostBg = (c, shade) => {
   const p = PALETTE[c % PALETTE.length];
-  return `rgba(${p.rgb}, ${p.alpha * GHOST_BG_FACTOR})`;
+  return `rgba(${p.rgb}, ${p.alpha * shade})`;
 };
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
@@ -59,6 +59,7 @@ function updateDecorations(editor) {
   const wantGhost = cfg.get('ghostAlign');
   const wantColors = cfg.get('columnColors');
   const tint = cfg.get('ghostTint');
+  const shade = cfg.get('ghostShade') ?? 0.7;
   const ghost = [];
   const buckets = columnTypes.map(() => []);
 
@@ -107,7 +108,7 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);

@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.15
+
+- New `ghostShade` setting: live multiplier over the column's alpha for the ghost background (default 0.7). Attachment and range backgrounds don't composite identically at equal rgba (1.0 rendered darker than the band, 0.5 lighter), so the uniform point is calibrated by eye — and above it the same dial makes the ghost stand out as a subtle pill.
+
 ## 0.2.14
 
 - Bare pipes are back (the pipe-tinted contiguous bands of 0.2.13 didn't convince) and the right-aligned ghost returns to its left-pipe anchor, whose typing behavior was right. The uniform look survives both reverts because the real fix was elsewhere: attachment backgrounds render about twice as strong as range backgrounds at the same rgba, so the edge-glued data ghosts now self-paint the column hue at HALF alpha (empirically calibrated); the separator's interior ghost stays transparent under the band.

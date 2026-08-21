@@ -12,11 +12,11 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 
 **Compacted table 1:**
 
-| Column A | Column  B | Column C |
-| --- | -- | --- |
-| A1 | dasdf | |
-| A2 | B2 | |
-| A3 | B3 | |
+| Column A | Column  B |
+| --- | --- |
+| A1 AAA | B1 |
+| A2 AA | B2 |
+| A3 A | B3 |
 
 **Compacted table 2 (right alignment column):**
 
