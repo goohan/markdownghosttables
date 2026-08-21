@@ -291,10 +291,19 @@ async function showMenu() {
 
 // ---------------------------------------------------------------- activation
 
+// The band decoration types carry a fixed background, so the live bandShade
+// dial rebuilds them (dispose + recreate) whenever the config changes.
+function buildColumnTypes() {
+  columnTypes.forEach((t) => t.dispose());
+  const shade = config().get('bandShade') ?? 1;
+  columnTypes = PALETTE.map((p) =>
+    vscode.window.createTextEditorDecorationType({ backgroundColor: `rgba(${p.rgb}, ${Math.min(1, p.alpha * shade)})` }));
+}
+
 export function activate(context) {
   ghostType = vscode.window.createTextEditorDecorationType({});
-  columnTypes = PALETTE.map((p) => vscode.window.createTextEditorDecorationType({ backgroundColor: `rgba(${p.rgb}, ${p.alpha})` }));
-  context.subscriptions.push(ghostType, ...columnTypes);
+  buildColumnTypes();
+  context.subscriptions.push(ghostType);
 
   statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusItem.command = 'markdownGhostTables.menu';
@@ -323,6 +332,7 @@ export function activate(context) {
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (!e.affectsConfiguration('markdownGhostTables')) return;
+      if (e.affectsConfiguration('markdownGhostTables.bandShade')) buildColumnTypes();
       refreshVisibleEditors();
       updateTabContext();
       updateStatusBar();

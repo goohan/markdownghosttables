@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.17
+
+- New `bandShade` setting: live multiplier over each column's alpha for the band background, sibling of `ghostShade` (whose range grows to 0–20 as well). Cranking both high makes the paint anatomy unmistakable — the diagnosis dial for the remaining unpainted-region issue.
+
 ## 0.2.16
 
 - The separator's ghost also answers to `ghostShade` (it was transparent under the band, so the dial didn't reach it): the whole table now tunes with one number. Johan's ideal mock shows the pill in every row, separator included.
