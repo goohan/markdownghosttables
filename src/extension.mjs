@@ -47,6 +47,21 @@ let debounceTimer;
 let statusItem;
 
 const config = () => vscode.workspace.getConfiguration('markdownGhostTables');
+
+// The attachment box is glyph-high, not line-high: without help its
+// background leaves naked slivers above/below the pill (the band, painted by
+// the editor as full-line rectangles, never has this problem — which is why
+// the separator's band-backed pill shows no slivers). Data pills get an
+// explicit line-height-sized box instead; VS Code's rule: lineHeight 0 →
+// 1.35 × fontSize, < 8 → multiplier over fontSize, ≥ 8 → pixels.
+function lineHeightPx() {
+  const ed = vscode.workspace.getConfiguration('editor');
+  const fontSize = ed.get('fontSize') || 14;
+  const lh = ed.get('lineHeight') || 0;
+  if (lh === 0) return Math.round(1.35 * fontSize);
+  if (lh < 8) return Math.round(lh * fontSize);
+  return Math.round(lh);
+}
 const currentMode = () => (config().get('mode') === 'expand' ? 'expand' : 'compact');
 const fullRange = (doc) => new vscode.Range(0, 0, doc.lineCount - 1, doc.lineAt(doc.lineCount - 1).text.length);
 const ghostColor = () => new vscode.ThemeColor('editorGhostText.foreground');
@@ -111,7 +126,12 @@ function updateDecorations(editor) {
             // and the caret lands naturally at the end of the text when
             // typing (with the ghost in between, the cursor could only sit
             // after the block). Mirrored for right-aligned columns.
-            const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: wantColors ? 'none' : GHOST_CSS };
+            const content = {
+              contentText: NBSP.repeat(needed),
+              backgroundColor: wantColors ? ghostBg(c, shade) : tint,
+              textDecoration: `${wantColors ? 'none' : GHOST_CSS}; display: inline-block; vertical-align: top`,
+              height: `${lineHeightPx()}px`
+            };
             if (alignRight) {
               if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
               else push(cell.start, cell.start, 'before', content);
@@ -331,7 +351,8 @@ export function activate(context) {
       debounceTimer = setTimeout(() => updateDecorations(editor), 120);
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (!e.affectsConfiguration('markdownGhostTables')) return;
+      // editor.fontSize / lineHeight feed the pill's explicit box height
+      if (!e.affectsConfiguration('markdownGhostTables') && !e.affectsConfiguration('editor.fontSize') && !e.affectsConfiguration('editor.lineHeight')) return;
       if (e.affectsConfiguration('markdownGhostTables.bandShade')) buildColumnTypes();
       refreshVisibleEditors();
       updateTabContext();

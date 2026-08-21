@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.18
+
+- The naked slivers above/below the data pills are gone (diagnosed with the shade dials cranked and Johan's red marks): attachment boxes are glyph-high, not line-high, so their background left the line's extra height unpainted — the band never shows this because the editor paints range backgrounds as full-line rectangles, which is also why the band-backed separator pill had no slivers. Data pills now get an explicit line-height-sized box (from editor.lineHeight / 1.35 × fontSize, recomputed when those settings change).
+
 ## 0.2.17
 
 - New `bandShade` setting: live multiplier over each column's alpha for the band background, sibling of `ghostShade` (whose range grows to 0–20 as well). Cranking both high makes the paint anatomy unmistakable — the diagnosis dial for the remaining unpainted-region issue.
