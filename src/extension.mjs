@@ -194,6 +194,39 @@ function updateDecorations(editor) {
     }
   }
 
+  // ------------------------------------------------------------ ANCHOR LAB
+  // TEMPORARY (remove once the attachment rule is validated). Lab lines live
+  // in test/tables.md: runs of '=' with the digits 1-6 in order, with or
+  // without spaces. Each digit gets a widget whose contentText ENCODES its
+  // attachment config, so one screenshot tabulates the whole physics: where
+  // each shape RENDERS, and which character it stays GLUED to on selection
+  // and caret movement (the anchor). Codes: first letter = attachment side
+  // (b=before, a=after); middle letter = target (none = the digit's own
+  // one-char range, e = an EMPTY range at the digit, p = the char BEFORE the
+  // digit); final digit = which anchor. b1 vs ap6 is the Rosetta pair: same
+  // expected render position (just before the digit), possibly different glue.
+  const LAB_LINE = /^[= ]+1[= ]+2[= ]+3[= ]+4[= ]+5[= ]+6[= ]*$/;
+  const LAB_SPECS = {
+    1: (p) => ({ code: 'b1', side: 'before', start: p, end: p + 1 }),
+    2: (p) => ({ code: 'a2', side: 'after', start: p, end: p + 1 }),
+    3: (p) => ({ code: 'be3', side: 'before', start: p, end: p }),
+    4: (p) => ({ code: 'ae4', side: 'after', start: p, end: p }),
+    5: (p) => ({ code: 'bp5', side: 'before', start: p - 1, end: p }),
+    6: (p) => ({ code: 'ap6', side: 'after', start: p - 1, end: p })
+  };
+  for (let l = 0; l < editor.document.lineCount; l++) {
+    const text = editor.document.lineAt(l).text;
+    if (!LAB_LINE.test(text)) continue;
+    for (const m of text.matchAll(/\d/g)) {
+      const spec = LAB_SPECS[m[0]](m.index);
+      ghost.push({
+        range: new vscode.Range(l, spec.start, l, spec.end),
+        renderOptions: { [spec.side]: { contentText: spec.code, color: ghostColor(), backgroundColor: 'rgba(255, 128, 0, 0.4)' } }
+      });
+    }
+  }
+  // ---------------------------------------------------------- END ANCHOR LAB
+
   editor.setDecorations(ghostType, ghost);
   columnTypes.forEach((type, i) => editor.setDecorations(type, buckets[i]));
 }

@@ -25,4 +25,15 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 | A2 | B2 | |
 | A3 | B3 | |
 
+# Anchors and blocks test
+
+====1====2====3====4====5====6====
+   ‾‾‾      ‾‾‾  ‾‾‾‾     ‾‾‾‾  ‾‾‾‾      ‾‾‾‾
+
+==1 ==2 ==3 ==4 ==5 ==6 ==
+ ‾‾‾     ‾‾‾ ‾‾‾‾    ‾‾‾‾ ‾‾‾‾     ‾‾‾‾
+
+== 1 == 2 == 3 == 4 == 5 == 6 ==
+  ‾‾‾      ‾‾‾  ‾‾‾‾     ‾‾‾‾  ‾‾‾‾      ‾‾‾‾
+
 ---
