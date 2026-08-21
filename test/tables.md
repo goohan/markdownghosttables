@@ -14,8 +14,8 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 
 | Column A | Column  B |
 | --- | --- |
-| A1abc | B1 |
-| A2 AAA | B2 |
+| A1 | B1 |
+| A2 | B2 |
 
 **Compacted table 2 (right alignment column):**
 

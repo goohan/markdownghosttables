@@ -177,16 +177,15 @@ function updateDecorations(editor) {
               // layer (third confirmation): the anchor's dot paints left of
               // the pill and the cell next to the pipe goes bare. Physics:
               // SP-at-the-pipe and block-belongs-to-SP cannot coexist.
-              // Final shape (Johan's pick): anchor = the LAST trailing SP,
-              // sitting at the cell's end next to the pipe, ghosts deploying
-              // to its left; extra SPs accumulate left of the pill; the
-              // anchor is not painted. Ownership flows LEFT (the block sweeps
-              // with what precedes it): 'after' would hand it to the SP but
-              // desyncs the whitespace dots (confirmed 3x), and a wide
-              // anchor range does not drag ownership (tested) — the Rosetta
-              // rule is positional. This is the physics optimum.
-              if (cell.segEnd > cell.end) {
-                push(cell.segEnd - 1, cell.segEnd, 'before', content);
+              // Johan's model, his terms: the ANCLA is the character the
+              // block stays glued to when selecting — and it must be the
+              // rightmost SP (like the RC glued rightward to the pipe).
+              // Rightward glue at this position = 'after' the char preceding
+              // the SP. Known cosmetic cost: the SP's whitespace dot may
+              // paint at its pre-widget column (inside the pill's left),
+              // a VS Code artifact of mid-run 'after' widgets.
+              if (cell.segEnd > cell.end && cell.segEnd - 2 >= cell.segStart) {
+                push(cell.segEnd - 2, cell.segEnd - 1, 'after', content);
               }
             }
           }
