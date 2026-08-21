@@ -2,7 +2,7 @@
   "name": "markdownghosttables",
   "displayName": "Markdown Ghost Tables",
   "description": "Compact markdown tables that still look aligned: virtual (ghost) column alignment, per-column colors, compact/expand commands, format-on-save and optional Tab cell navigation.",
-  "version": "0.2.23",
+  "version": "0.2.109",
   "publisher": "goohan",
   "license": "MIT",
   "icon": "assets/icon.png",
@@ -81,6 +81,11 @@
           "minimum": 0,
           "maximum": 20,
           "description": "With column colors on: multiplier over each column's alpha for the band background. Live, like ghostShade (crank it high to diagnose what paints where)."
+        },
+        "markdownGhostTables.pipeTint": {
+          "type": "boolean",
+          "default": true,
+          "description": "With column colors on: also tint each `|` with the color of the column to its left (off = truly bare pipes everywhere; pills glued to a pipe then self-paint without a canvas behind, so thin slivers may show around them, especially under zoom)."
         },
         "markdownGhostTables.ghostTint": {
           "type": "string",
