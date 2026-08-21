@@ -47,13 +47,14 @@ function updateDecorations(editor) {
             buckets[c % columnTypes.length].push(new vscode.Range(row.line, cell.start, row.line, cell.end));
           }
           if (!wantGhost) return;
-          // truly differential: discount the real padding the cell already
-          // carries (beyond the canonical single space around each `|`), so an
-          // already-expanded cell gets no ghost and a half-expanded one only
-          // gets the difference
+          // truly differential, measured on the whole segment: aligned, a
+          // cell's segment (between its `|`s) spans width+2 columns (canonical
+          // single space on each side); the ghost only supplies what the real
+          // characters — text and padding alike — don't. Counting the segment
+          // instead of text+trailing keeps it symmetric for right-aligned
+          // columns and makes empty cells fall out naturally.
           const alignRight = table.alignments[c] === 'right' && !row.isSeparator;
-          const realPad = alignRight ? cell.start - cell.segStart : cell.segEnd - cell.end;
-          const needed = (table.widths[c] ?? 3) - measure(cell.text) - Math.max(0, realPad - 1);
+          const needed = (table.widths[c] ?? 3) + 2 - (cell.segEnd - cell.segStart);
           if (needed <= 0) return;
           // The ghost is anchored to a REAL character (before/after attachment
           // on a one-char range): on an empty range VS Code decides on its own
@@ -72,7 +73,11 @@ function updateDecorations(editor) {
             else push(cell.end, cell.end, 'after', content);
           } else {
             const content = { contentText: NBSP.repeat(needed), backgroundColor: tint };
-            if (alignRight) {
+            if (!cell.text && cell.segEnd > cell.segStart) {
+              // empty cell: ghost before its last real space — ghost, dot,
+              // pipe, like every sibling row
+              push(cell.segEnd - 1, cell.segEnd, 'before', content);
+            } else if (alignRight) {
               if (cell.start > cell.segStart) push(cell.start - 1, cell.start, 'after', content);
               else push(cell.start, cell.start, 'before', content);
             } else {
