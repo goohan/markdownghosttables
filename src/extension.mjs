@@ -66,6 +66,8 @@ function updateDecorations(editor) {
     for (const table of analyzeText(editor.document.getText())) {
       for (const row of table.rows) {
         row.cells.forEach((cell, c) => {
+          const rightColumn = table.alignments[c] === 'right';
+          const needed = (table.widths[c] ?? 3) + 2 - (cell.segEnd - cell.segStart);
           if (wantColors && cell.segEnd > cell.segStart) {
             // The editor paints range backgrounds as full-line rectangles
             // that cover widgets injected BETWEEN the range's characters —
@@ -78,28 +80,30 @@ function updateDecorations(editor) {
             // pill (the alternative was the naked-sliver saga of 0.2.9-18).
             // Every cell backs its RIGHT pipe (last segment char + pipe), so
             // pipes wear the color of the column to their left. A
-            // right-aligned COLUMN additionally backs its LEFT flank (pipe +
-            // first char) in every row, separator included: its left-glued
-            // pill rests on its OWN color, and the only overlap is the pipe
-            // character itself — a constant, column-stable blend mostly
-            // hidden by the pipe glyph (per-row color lotteries and a
-            // neighbor-colored base under the pill both looked wrong).
+            // right-aligned cell additionally backs its LEFT flank (pipe +
+            // first char) ONLY when it carries a left-glued pill there
+            // (Johan's rule): pill-less rows — header, separator — keep the
+            // pipe purely left-colored, and where the pill exists the pipe
+            // and both flanking pills show a blend of the two columns
+            // (backing rectangles swallow boundary widgets on both sides —
+            // half-and-half painting is not possible with these primitives;
+            // accepted as livable).
             const bucket = buckets[c % columnTypes.length];
-            const rightColumn = table.alignments[c] === 'right';
-            if (rightColumn) bucket.push(new vscode.Range(row.line, Math.max(0, cell.segStart - 1), row.line, cell.segStart + 1));
-            const bandStart = rightColumn ? cell.segStart + 1 : cell.segStart;
+            const leftPill = wantGhost && rightColumn && !row.isSeparator && needed > 0;
+            if (leftPill) bucket.push(new vscode.Range(row.line, Math.max(0, cell.segStart - 1), row.line, cell.segStart + 1));
+            const bandStart = leftPill ? cell.segStart + 1 : cell.segStart;
             if (cell.segEnd - 1 > bandStart) bucket.push(new vscode.Range(row.line, bandStart, row.line, cell.segEnd - 1));
             bucket.push(new vscode.Range(row.line, cell.segEnd - 1, row.line, cell.segEnd + 1));
           }
           if (!wantGhost) return;
-          // truly differential, measured on the whole segment: aligned, a
-          // cell's segment (between its `|`s) spans width+2 columns (canonical
-          // single space on each side); the ghost only supplies what the real
-          // characters — text and padding alike — don't. Counting the segment
-          // instead of text+trailing keeps it symmetric for right-aligned
-          // columns and makes empty cells fall out naturally.
-          const alignRight = table.alignments[c] === 'right' && !row.isSeparator;
-          const needed = (table.widths[c] ?? 3) + 2 - (cell.segEnd - cell.segStart);
+          // needed (computed above): truly differential, measured on the
+          // whole segment — aligned, a cell's segment (between its `|`s)
+          // spans width+2 columns (canonical single space on each side); the
+          // ghost only supplies what the real characters — text and padding
+          // alike — don't. Counting the segment instead of text+trailing
+          // keeps it symmetric for right-aligned columns and makes empty
+          // cells fall out naturally.
+          const alignRight = rightColumn && !row.isSeparator;
           if (needed <= 0) return;
           // The ghost is anchored to a REAL character (before/after attachment
           // on a one-char range): on an empty range VS Code decides on its own
