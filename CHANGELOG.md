@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.11
+
+- Uniform cell color: the ghost blocks now take exactly the band's shade (same hue, same alpha), so the whole cell paints flat wall to wall. The stronger ghost alpha of 0.2.9 made the soft band read as unpainted and the blocks as stairs following the text lengths (spotted by Johan). Real vs virtual is told by the whitespace dots; gray mode (colors off) keeps the tint contrast and the rounded corners.
+
 ## 0.2.10
 
 - Color band polish: the ghost's rounded corners now apply only in gray mode (colors off) — with the bands on they notched dark editor background around each block, reading as an ugly margin; flush blocks make the whole cell read colored wall to wall. Palette saturation raised a notch, mainly to pull the first two hues (blue and teal) apart.

@@ -33,7 +33,7 @@ Alignment padding in markdown tables is presentation, not content: it bloats fil
 | `markdownGhostTables.mode` | `compact` | Table mode (`compact` / `expand`): drives format-on-save and Tab formatting |
 | `markdownGhostTables.ghostAlign` | `true` | Virtual column alignment |
 | `markdownGhostTables.ghostTint` | `rgba(128,128,128,0.10)` | Background tint of ghost padding |
-| `markdownGhostTables.columnColors` | `true` | Continuous rainbow bands per column (separator included; ghost in a stronger shade) |
+| `markdownGhostTables.columnColors` | `true` | Continuous rainbow bands per column (separator and ghost included, one flat shade) |
 | `markdownGhostTables.formatOnSave` | `false` | Normalize all tables to the mode on save |
 | `markdownGhostTables.tabNavigation` | `false` | Tab formats to the mode + jumps between cells |
 

@@ -6,9 +6,11 @@ import * as vscode from 'vscode';
 import { analyzeText, formatText, formatTable, measure } from './core.mjs';
 
 // Per-column background palette (low alpha: works on light and dark themes).
-// A column paints its WHOLE cells — text, real padding, separator row — with
-// the soft alpha, and its ghost blocks with the same hue at GHOST_ALPHA, so
-// the column reads as one continuous band with a subtly stronger virtual part.
+// A column paints its WHOLE cells — text, real padding, ghost padding and the
+// separator row — in ONE flat shade: the ghost blocks take exactly the same
+// color as the band, so the cell reads uniform wall to wall (a stronger ghost
+// alpha made the soft band look unpainted and the blocks read as stairs
+// following the text lengths). Real vs virtual is told by the whitespace dots.
 const PALETTE = [
   { rgb: '70, 150, 235', alpha: 0.07 },
   { rgb: '55, 212, 155', alpha: 0.07 },
@@ -18,8 +20,7 @@ const PALETTE = [
   { rgb: '125, 215, 255', alpha: 0.07 },
   { rgb: '160, 212, 138', alpha: 0.08 }
 ];
-const GHOST_ALPHA = 0.16;
-const ghostBg = (c) => `rgba(${PALETTE[c % PALETTE.length].rgb}, ${GHOST_ALPHA})`;
+const ghostBg = (c) => `rgba(${PALETTE[c % PALETTE.length].rgb}, ${PALETTE[c % PALETTE.length].alpha})`;
 const NBSP = '\u00A0'; // regular spaces collapse in contentText; nbsp guarantees width
 const MT_ID = 'takumii.markdowntable'; // the Markdown Table extension (full table editor)
 // rounded ends on the ghost background (via the textDecoration CSS escape
