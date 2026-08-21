@@ -1,5 +1,9 @@
 # Change Log
 
+## 0.2.22
+
+- Right-aligned columns back their own left flank in every row (separator included): their pill rests on their OWN color — 0.2.21's merged backing put a neighbor-colored slab under it and even ate the neighbor's space in rows without pills. The only overlap left is the pipe character itself: a constant, column-stable blend mostly hidden by the glyph.
+
 ## 0.2.21
 
 - Pipe ownership rule: every pipe is painted exactly once, by the column to its left, consistent in every row. Next to a right-aligned column both cells used to back the shared pipe — stacked colors that matched neither column and changed per row (spotted by Johan's red circles). The left cell's backing now extends one char further to also cover the right-aligned neighbor's pill; residual compromise: that pill sits on the left column's base color (subtle at real alphas).
