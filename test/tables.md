@@ -4,26 +4,26 @@ Scratch fixtures to eyeball the extension (ghost alignment, column colors, compa
 
 **Aligned/Expanded table:**
 
-| Column A | Column        BCDE | Column C    a |
-| -------- | ------------------ | ------------- |
-| A1       | B1                 | C1            |
-| A2       |                    | C2            |
-| A3       | B3                 | C3            |
+| Column A | Column B | Column C |
+| -------- | -------- | -------- |
+| A1       | B1       | C1       |
+| A2       |          | C2       |
+| A3       | B3       | C3       |
 
 **Compacted table 1:**
 
-| Column A | Column  B |
-| --- | --- |
-| A1 | B1 |
-| A2 | B2 |
+| Column A | Column  B | |
+| --- | --- | --- |
+| A1 | B1 | |
+| A2 | B2 | |
 
 **Compacted table 2 (right alignment column):**
 
-| Column A | Column  B | Column C |
-| --- | --: | --- |
-| A1 | B1 | |
-| A2 | B2 | |
-| A3 | B3 | |
+| Column A | Column  B | Column C | |
+| --- | --: | --- | --- |
+| A1 | B | | |
+| A2 | B2 | | |
+| A3 | B3 | | |
 
 # Anchors and blocks test
 
