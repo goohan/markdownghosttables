@@ -6,12 +6,10 @@ import * as vscode from 'vscode';
 import { analyzeText, formatText, formatTable, measure } from './core.mjs';
 
 // Per-column background palette (low alpha: works on light and dark themes).
-// A column paints its WHOLE cells — text, real and ghost padding, separator
-// row — in ONE flat shade: the band's background rectangle covers the range's
-// full visual span, injected ghost widgets included, so with colors on the
-// ghost paints NO background of its own (painting one stacked two layers of
-// the same shade and the blocks read darker, as a saw following the text
-// lengths). Real vs virtual is told by the whitespace dots.
+// A column paints its whole cells — text, real padding, separator row — as
+// one flat band. The pills (ghost padding) hang at a band edge, so the band
+// cannot cover them and they paint their own background: see ghostBg. Real
+// vs virtual is told by the whitespace dots.
 const PALETTE = [
   { rgb: '70, 150, 235', alpha: 0.07 },
   { rgb: '55, 212, 155', alpha: 0.07 },
@@ -21,12 +19,14 @@ const PALETTE = [
   { rgb: '125, 215, 255', alpha: 0.07 },
   { rgb: '160, 212, 138', alpha: 0.08 }
 ];
-// The pipe-glued data ghosts sit outside the band's pixel span, so they paint
-// their own background: the column hue with its alpha times the ghostShade
-// setting — a live dial, because attachment and range backgrounds do not
-// composite identically at equal rgba (empirical: 1.0 rendered darker than
-// the band, 0.5 lighter). At the value where the cell looks uniform the dial
-// doubles as the "pastille" control: above it, the ghost stands out.
+// A pill hangs at its band's edge (anchor-lab rule: a widget at a range
+// boundary is never covered by the rectangle), so it paints its own
+// background: the column hue with its alpha times the ghostShade setting —
+// a live dial, because attachment and range backgrounds do not composite
+// identically at equal rgba (empirical: 1.0 rendered darker than the band,
+// 0.5 lighter). At the value where the cell looks uniform the dial doubles
+// as the "pastille" control: above it the pill stands out, which is what
+// the shipped default (2) deliberately does.
 const ghostBg = (c, shade) => {
   const p = PALETTE[c % PALETTE.length];
   return `rgba(${p.rgb}, ${p.alpha * shade})`;
@@ -58,7 +58,8 @@ function updateDecorations(editor) {
   const wantGhost = cfg.get('ghostAlign');
   const wantColors = cfg.get('columnColors');
   const tint = cfg.get('ghostTint');
-  const shade = cfg.get('ghostShade') ?? 0.7;
+  const shade = cfg.get('ghostShade') ?? 2;
+  const pipeTint = cfg.get('pipeTint') === true;
   const ghost = [];
   const buckets = columnTypes.map(() => []);
 
@@ -68,32 +69,23 @@ function updateDecorations(editor) {
         row.cells.forEach((cell, c) => {
           const rightColumn = table.alignments[c] === 'right';
           const needed = (table.widths[c] ?? 3) + 2 - (cell.segEnd - cell.segStart);
-          if (wantColors && cell.segEnd > cell.segStart) {
+          if (wantColors && (cell.segEnd > cell.segStart || (pipeTint && c === 0))) {
             // The editor paints range backgrounds as full-line rectangles
             // that cover widgets injected BETWEEN the range's characters —
-            // never widgets hanging at its edges. So the pipe-glued ghosts
-            // get a BACKING range that crosses their gap (last segment char
-            // + closing pipe; mirrored for right-aligned cells), with the
-            // rest of the cell as a second adjacent range of the same color.
-            // Price accepted: the crossed pipe tints with the column color —
-            // that is what buys a real, zoom-proof background behind the
-            // pill (the alternative was the naked-sliver saga of 0.2.9-18).
-            // Every cell backs its RIGHT pipe (last segment char + pipe), so
-            // pipes wear the color of the column to their left. A
-            // right-aligned cell additionally backs its LEFT flank (pipe +
-            // first char) ONLY when it carries a left-glued pill there
-            // (Johan's rule): pill-less rows — header, separator — keep the
-            // pipe purely left-colored, and where the pill exists the pipe
-            // and both flanking pills show a blend of the two columns
-            // (backing rectangles swallow boundary widgets on both sides —
-            // half-and-half painting is not possible with these primitives;
-            // accepted as livable).
+            // never the ones hanging at its edges (anchor lab). That is what
+            // pipeTint buys beyond cosmetics: it pulls the closing pipe into
+            // the band, which then backs the pill glued to that pipe. With
+            // pipeTint off (the default) the pipes read bare and those pills
+            // self-paint with no canvas behind — thin slivers may show
+            // around them, especially under zoom: the accepted cost of that
+            // look (the alternative was the naked-sliver saga of 0.2.9-18).
+            // pipeTint also closes the row's LEADING pipe, which the rule
+            // (each pipe takes the color of the column to its LEFT) leaves
+            // claimed by no column: column 0's band starts one char earlier,
+            // so on it the table reads as bands with both edges closed, and
+            // off it every single pipe reads bare (Johan's call).
             const bucket = buckets[c % columnTypes.length];
-            const leftPill = wantGhost && rightColumn && !row.isSeparator && needed > 0;
-            if (leftPill) bucket.push(new vscode.Range(row.line, Math.max(0, cell.segStart - 1), row.line, cell.segStart + 1));
-            const bandStart = leftPill ? cell.segStart + 1 : cell.segStart;
-            if (cell.segEnd - 1 > bandStart) bucket.push(new vscode.Range(row.line, bandStart, row.line, cell.segEnd - 1));
-            bucket.push(new vscode.Range(row.line, cell.segEnd - 1, row.line, cell.segEnd + 1));
+            bucket.push(new vscode.Range(row.line, pipeTint && c === 0 ? cell.segStart - 1 : cell.segStart, row.line, pipeTint ? cell.segEnd + 1 : cell.segEnd));
           }
           if (!wantGhost) return;
           // needed (computed above): truly differential, measured on the
@@ -105,14 +97,16 @@ function updateDecorations(editor) {
           // cells fall out naturally.
           const alignRight = rightColumn && !row.isSeparator;
           if (needed <= 0) return;
-          // The ghost is anchored to a REAL character (before/after attachment
-          // on a one-char range): on an empty range VS Code decides on its own
-          // which character the widget associates with, and it glued the real
-          // padding space into the block (unselectable dot fused left of the
-          // ghost, unpainted gap before the `|`). Explicit anchors give the
-          // canonical order: text + ghost + real space + `|` (mirrored when
-          // right-aligned; dashes + ghost dashes + `:`/space in the separator).
-          // Cells with no adjacent real padding fall back to an empty anchor.
+          // THE anchor rule (validated in the anchor lab, test/tables.md):
+          // the range only fixes the render SLOT — 'before' renders at range
+          // start, 'after' at range end; range content, width, even
+          // emptiness are irrelevant. The GLUE belongs to the slot, not the
+          // range: a 'before' widget stays glued — caret and selection — to
+          // the real char immediately LEFT of its slot, an 'after' widget to
+          // the one on its RIGHT; the block [anchor + widget] is atomic.
+          // One artifact: a SP immediately RIGHT of an 'after' widget paints
+          // its whitespace dot at the pre-widget column (VS Code, no fix
+          // from a decoration) — no shape may leave a SP right of an 'after'.
           const push = (start, end, side, content) =>
             ghost.push({ range: new vscode.Range(row.line, start, row.line, end), renderOptions: { [side]: content } });
           if (row.isSeparator) {
@@ -120,22 +114,42 @@ function updateDecorations(editor) {
             // over it — one dial for all rows: 0 = fully uniform cell,
             // higher = the pill stands out from the band's shade
             const content = { contentText: '-'.repeat(needed), color: ghostColor(), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: GHOST_CSS };
+            // Ghost dashes must adjoin the real dash run (the data cells'
+            // between-SP-and-pipe slot makes no sense here), so the slot is
+            // right after the last dash and the block [last dash + ghosts]
+            // stays glued to it: 'before' the char after the run — the ':'
+            // if any, else the trailing SP, else the closing pipe when the
+            // SP was deleted (separator-only fallback; a missing mandatory
+            // SP in a data cell means no pill instead).
             if (cell.text.endsWith(':')) push(cell.end - 1, cell.end, 'before', content);
             else if (cell.segEnd > cell.end) push(cell.end, cell.end + 1, 'before', content);
-            else push(cell.end, cell.end, 'after', content);
+            else if (cell.end > cell.start && editor.document.lineAt(row.line).text.length > cell.segEnd) {
+              push(cell.segEnd, cell.segEnd + 1, 'before', content);
+            }
           } else {
-            // data cells: the ghost glues to the cell's FAR pipe, so all real
-            // content — text plus its reglamentary space — stays contiguous
-            // and the caret lands naturally at the end of the text when
-            // typing (with the ghost in between, the cursor could only sit
-            // after the block). Mirrored for right-aligned columns.
+            // Data pills — shape C, the anchor lab's pick: every pill is a
+            // 'before' widget whose glue char is the cell's MANDATORY space.
+            // Left cells and empty cells: slot between the trailing SP and
+            // the closing pipe — the block [SP + ghosts] hangs at the pipe
+            // (Johan's model) with clean whitespace dots. Right-aligned
+            // cells: slot before the first text char — the mirror, block
+            // [leading SP + ghosts]. No mandatory space → no pill (the
+            // linter flags it, Tab repairs it). Discarded shapes: 'after'
+            // the last text char (v0.2.111/115) left the SP right of an
+            // 'after' widget — the dot artifact; 'before' the SP (v0.2.114
+            // and the RC) glued the block to the TEXT, against the model.
             const content = { contentText: NBSP.repeat(needed), backgroundColor: wantColors ? ghostBg(c, shade) : tint, textDecoration: GHOST_CSS };
-            if (alignRight) {
-              if (cell.segEnd > cell.segStart) push(cell.segStart, cell.segStart + 1, 'before', content);
-              else push(cell.start, cell.start, 'before', content);
-            } else {
-              if (cell.segEnd > cell.segStart) push(cell.segEnd - 1, cell.segEnd, 'after', content);
-              else push(cell.end, cell.end, 'after', content);
+            const lineLen = editor.document.lineAt(row.line).text.length;
+            if (cell.text === '') {
+              if (lineLen > cell.segEnd) {
+                push(cell.segEnd, cell.segEnd + 1, 'before', content);
+              }
+            } else if (alignRight) {
+              if (cell.start > cell.segStart) {
+                push(cell.start, cell.start + 1, 'before', content);
+              }
+            } else if (cell.segEnd > cell.end && lineLen > cell.segEnd) {
+              push(cell.segEnd, cell.segEnd + 1, 'before', content);
             }
           }
         });
@@ -265,10 +279,10 @@ function updateStatusBar() {
   }
   const cfg = config();
   const off = [
-    !cfg.get('ghostAlign') && 'ghost off',
-    !cfg.get('columnColors') && 'colors off'
+    !cfg.get('ghostAlign') && 'Ghost off',
+    !cfg.get('columnColors') && 'Colors off'
   ].filter(Boolean).join(', ');
-  statusItem.text = `$(table) ${currentMode()}${off ? ` (${off})` : ''}`;
+  statusItem.text = `$(table) ${currentMode() === 'expand' ? 'Expand' : 'Compact'}${off ? ` (${off})` : ''}`;
   statusItem.tooltip = 'Markdown Ghost Tables — click to toggle features';
   statusItem.show();
 }
@@ -290,7 +304,8 @@ async function showMenu() {
     { key: 'columnColors', label: 'Column colors', description: 'rainbow column backgrounds', picked: !!cfg.get('columnColors') },
     { key: 'mode', label: 'Expand mode', description: 'checked: align with real spaces · unchecked: compact', picked: currentMode() === 'expand' },
     { key: 'tabNavigation', label: 'Tab navigation', description: 'Tab formats the table to the mode and jumps between cells', picked: !!cfg.get('tabNavigation') },
-    { key: 'formatOnSave', label: 'Format on save', description: 'normalize all tables to the mode when saving', picked: cfg.get('formatOnSave') === true }
+    { key: 'formatOnSave', label: 'Format on save', description: 'normalize all tables to the mode when saving', picked: cfg.get('formatOnSave') === true },
+    { key: 'pipeTint', label: 'Pipe tint', description: 'tint every | so the columns read as continuous bands (off: all pipes bare)', picked: cfg.get('pipeTint') === true }
   ];
   const picked = await vscode.window.showQuickPick(items, {
     canPickMany: true,
@@ -309,13 +324,13 @@ async function showMenu() {
 
 // ---------------------------------------------------------------- activation
 
-// The band decoration types carry a fixed background, so the live bandShade
-// dial rebuilds them (dispose + recreate) whenever the config changes.
+// Decoration types carry a fixed background, so the live dials rebuild them:
+// bandShade multiplies each column's alpha for the band.
 function buildColumnTypes() {
   columnTypes.forEach((t) => t.dispose());
-  const shade = config().get('bandShade') ?? 1;
+  const band = config().get('bandShade') ?? 2;
   columnTypes = PALETTE.map((p) =>
-    vscode.window.createTextEditorDecorationType({ backgroundColor: `rgba(${p.rgb}, ${Math.min(1, p.alpha * shade)})` }));
+    vscode.window.createTextEditorDecorationType({ backgroundColor: `rgba(${p.rgb}, ${Math.min(1, p.alpha * band)})` }));
 }
 
 export function activate(context) {
@@ -350,7 +365,7 @@ export function activate(context) {
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (!e.affectsConfiguration('markdownGhostTables')) return;
-      if (e.affectsConfiguration('markdownGhostTables.bandShade')) buildColumnTypes();
+      if (e.affectsConfiguration('markdownGhostTables.bandShade') || e.affectsConfiguration('markdownGhostTables.ghostShade') || e.affectsConfiguration('markdownGhostTables.ghostTint')) buildColumnTypes();
       refreshVisibleEditors();
       updateTabContext();
       updateStatusBar();

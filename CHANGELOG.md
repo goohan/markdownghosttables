@@ -1,5 +1,15 @@
 # Change Log
 
+## 0.3.0
+
+- Ghost blocks redesigned around the attachment rule, finally pinned down in a dedicated anchor lab (a line of digits, each carrying a widget that encodes its own config, tabulated from real screenshots): a decoration range only fixes the render SLOT — `before` at range start, `after` at range end, whatever the range's content, width or emptiness — while the GLUE belongs to the slot, not the range: a `before` widget stays welded, caret and selection alike, to the real character on the LEFT of its slot, an `after` widget to the one on its RIGHT. Every shape up to 0.2.23 was a guess at this, and the "empty ranges associate unpredictably" belief was the rule operating unseen.
+- Data pills now hang between the cell's mandatory space and the closing pipe (`before` the pipe), so the block [space + ghosts] belongs to the space — the block model — and the whitespace dots are back in their real columns. The discarded alternative (`after` the last text character) left a space to the RIGHT of an `after` widget, which makes VS Code paint that space's dot at its pre-widget column, inside the pill.
+- No pill without the cell's mandatory space: a malformed cell renders bare instead of mis-anchored (the linter flags it, Tab repairs it).
+- `pipeTint` becomes a two-reading switch and now defaults to OFF: on, every pipe is tinted — the row's LEADING pipe included, which the "each pipe takes the color of the column to its left" rule leaves claimed by no column — so the columns read as continuous bands with both edges closed; off, every single pipe reads bare.
+- New defaults for the shade dials: `ghostShade` and `bandShade` both 2, the calibration where the pills read as pastilles over their band.
+- The status bar item reads capitalized: `Compact (Ghost off, Colors off)`.
+- README: cover screenshot, a gif walking through Tab navigation and the two view features, and a "Markdown Table friendly" section — the pair is recommended, and the Tab split by mode plus the keybindings step now live there.
+
 ## 0.2.23
 
 - The right-aligned column's left-flank backing now exists only where its pill exists (Johan's rule): pill-less rows — header, separator — keep the shared pipe purely left-colored. Where both pills flank a pipe, the pipe and both pills show a blend of the two columns: backing rectangles swallow boundary widgets on both sides, and half-and-half painting is not possible with these primitives — accepted as livable.
